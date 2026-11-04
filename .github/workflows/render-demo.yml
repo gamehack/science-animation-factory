@@ -32,7 +32,7 @@ jobs:
     timeout-minutes: 55
     env:
       PIP_NO_CACHE_DIR: "1"
-      HF_HOME: ${{ runner.temp }}/science-hf
+      HF_HOME: /tmp/science-hf
       HF_HUB_DISABLE_TELEMETRY: "1"
       OMP_NUM_THREADS: "2"
     steps:
