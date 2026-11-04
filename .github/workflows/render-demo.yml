@@ -1,0 +1,87 @@
+name: Render science demo
+
+on:
+  workflow_dispatch:
+    inputs:
+      quality:
+        description: "Preview (360x640) or final (1080x1920)"
+        required: true
+        default: preview
+        type: choice
+        options:
+          - preview
+          - full
+  # Run a single real render when this workflow first lands on main.
+  # Subsequent runs are manual, except for deliberate workflow edits.
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/render-demo.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: render-science-demo
+  cancel-in-progress: false
+
+jobs:
+  render:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    env:
+      PIP_NO_CACHE_DIR: "1"
+      HF_HOME: /tmp/science-hf
+      HF_HUB_DISABLE_TELEMETRY: "1"
+      OMP_NUM_THREADS: "2"
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install native graphics, audio and font dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            build-essential pkg-config libcairo2-dev libpango1.0-dev \
+            ffmpeg espeak-ng fonts-dejavu-core
+
+      - name: Install CPU-only PyTorch and science factory
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install -e '.[all]'
+          python -m manim --version
+
+      - name: Verify storyboard and run tests
+        run: |
+          python -m unittest discover -s tests -v
+          python -m science_factory validate examples/moon_orbit.json
+
+      - name: Render sample video with real local narration
+        env:
+          REQUESTED_QUALITY: ${{ inputs.quality || 'preview' }}
+        run: |
+          python -m science_factory build examples/moon_orbit.json \
+            --voice kokoro --quality "$REQUESTED_QUALITY" --output output
+
+      - name: Upload video and QA evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: science-moon-demo-${{ github.run_id }}-${{ github.run_attempt }}
+          retention-days: 1
+          compression-level: 1
+          if-no-files-found: warn
+          path: |
+            output/**/final.mp4
+            output/**/manifest.json
+            output/**/storyboard.json
+            output/**/render-plan.json
+            output/**/captions.srt
+            output/**/scene_*_review.jpg
