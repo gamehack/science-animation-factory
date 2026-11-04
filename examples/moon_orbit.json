@@ -1,0 +1,47 @@
+{
+  "title": "Why Doesn't the Moon Fall to Earth?",
+  "language": "en-US",
+  "target_seconds": 45,
+  "sources": [
+    "https://science.nasa.gov/moon/facts/"
+  ],
+  "scenes": [
+    {
+      "kind": "orbit",
+      "title": "Why doesn't the Moon fall?",
+      "narration": "Why doesn't the Moon fall straight down to Earth? It actually is falling, all the time.",
+      "params": {"center": "Earth", "object": "Moon"}
+    },
+    {
+      "kind": "force",
+      "title": "Gravity pulls inward",
+      "narration": "Earth's gravity pulls the Moon inward, just as it pulls a falling ball toward the ground.",
+      "params": {"direction": "Gravitational pull"}
+    },
+    {
+      "kind": "comparison",
+      "title": "Two motions at once",
+      "narration": "The Moon is also moving sideways. That motion is essential to understanding its orbit.",
+      "params": {"left": "Gravity: inward", "right": "Motion: sideways"}
+    },
+    {
+      "kind": "orbit",
+      "title": "A constantly curving path",
+      "narration": "As gravity changes the direction of its motion, the Moon keeps missing Earth.",
+      "params": {"center": "Earth", "object": "Moon"}
+    },
+    {
+      "kind": "comparison",
+      "title": "Imagine throwing a ball",
+      "narration": "Imagine throwing a ball faster and faster. At high enough speed, the ground curves away beneath it.",
+      "params": {"left": "Slow: lands", "right": "Fast: keeps falling"}
+    },
+    {
+      "kind": "orbit",
+      "title": "That's an orbit",
+      "narration": "An orbit is continuous free fall around another object, rather than a straight fall into it.",
+      "params": {"center": "Earth", "object": "Moon"}
+    }
+  ]
+}
+

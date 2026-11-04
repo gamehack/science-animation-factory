@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "science-animation-factory"
+version = "0.1.0"
+description = "A free, self-hosted, storyboard-driven science animation pipeline"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {file = "LICENSE"}
+dependencies = []
+
+[project.optional-dependencies]
+render = ["manim>=0.20,<0.23"]
+voice = ["kokoro>=0.9", "numpy>=1.26"]
+all = ["manim>=0.20,<0.23", "kokoro>=0.9", "numpy>=1.26"]
+
+[project.scripts]
+science-factory = "science_factory.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["science_factory*"]
+

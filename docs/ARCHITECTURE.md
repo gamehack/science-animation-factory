@@ -1,0 +1,51 @@
+# M1 architecture and decisions
+
+## Execution path
+
+```text
+storyboard.json
+   |  schema.py — strict allowlist, no executable scene code
+   v
+voice.py — Kokoro TTS once per narration beat (or tone diagnostics)
+   |  sample-accurate WAV lengths
+   v
+timeline.py — per-scene start/duration, phrase-level SRT
+   |
+   +--> render_scenes.py — trusted Manim visual builders -> silent MP4
+   |
+   +--> media.py — one FFmpeg audio mix + subtitle burn
+                      |
+                      v
+                    final.mp4
+                      |
+                      v
+             ffprobe metadata QA + review JPEGs
+                      |
+                      v
+                  manifest.json
+```
+
+**Core invariant:** `scene.start` is the sum of durations before it. Audio is
+placed at that absolute time, and the corresponding Manim segment consumes
+exactly `scene.duration`. Audio is never individually encoded as AAC per scene.
+
+**Threat boundary:** A model can choose only scene templates and text/parameters
+accepted by `schema.py`; it cannot inject imports, Python snippets, file paths,
+shell commands or tool names. Manim runs only developer-owned code. Future
+external data fetches require SSRF-safe URL and redirect validation.
+
+**Testing boundary:** Unit tests do not need heavyweight render dependencies.
+Full visual/video QA needs a machine with Manim, Kokoro and FFmpeg installed.
+The CPU/RAM/runtime of the target machine must be measured before scheduling.
+
+## M2 decisions still open
+
+1. A scientific source allowlist and evidence/claim schema.
+2. LLM adapter with free-only model routing, request quotas and no paid fallback.
+3. Persistent SQLite job queue with idempotency, stage checkpoints and retries.
+4. Independent visual QA (layout checks, deterministic media checks, optional vision).
+5. Review-only output interface; any publishing API is out of scope.
+
+No requirement to use an existing multi-agent skill or the user's other agent
+bridges as the runtime. Future deployment must be authorized separately.
+
