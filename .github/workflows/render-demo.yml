@@ -77,6 +77,19 @@ jobs:
           python -m science_factory build examples/moon_orbit.json \
             --voice kokoro --quality "$REQUESTED_QUALITY" --output output
 
+      - name: Confirm deliverable is ready and print video metadata
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          manifests = list(Path('output').glob('*/manifest.json'))
+          assert len(manifests) == 1, 'expected one completed job'
+          data = json.loads(manifests[0].read_text(encoding='utf-8'))
+          assert data['status'] == 'READY', 'only Kokoro-narrated output can pass'
+          assert len(data['review_frames']) == 6, 'missing scene review images'
+          print(json.dumps(data['checks'], indent=2))
+          PY
+
       - name: Upload video and QA evidence
         if: always()
         uses: actions/upload-artifact@v4

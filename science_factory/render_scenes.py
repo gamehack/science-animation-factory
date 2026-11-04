@@ -66,9 +66,10 @@ def _wave(params: dict):
 
 def _force(params: dict):
     obj = Square(side_length=1.5, color=HIGHLIGHT, fill_opacity=0.2).shift(UP * 0.3)
-    arrow = Arrow(obj.get_center(), obj.get_center() + UP * 2.0, color=ACCENT, buff=0.2)
+    # This M1 force card depicts a falling body near Earth: gravity is down.
+    arrow = Arrow(obj.get_center(), obj.get_center() + DOWN * 2.0, color=ACCENT, buff=0.2)
     label = _label(params.get("direction", "Force"), size=28, width=5.0)
-    label.next_to(arrow, UP)
+    label.next_to(arrow, DOWN)
     return VGroup(obj, arrow, label), GrowArrow(arrow)
 
 

@@ -79,6 +79,15 @@ class TimelineTests(unittest.TestCase):
         self.assertIn("00:00:07,500 -->", content)
         self.assertIn("Why doesn't the Moon", content)
 
+    def test_subtitle_cards_fit_two_short_lines(self):
+        storyboard = Storyboard.from_file(EXAMPLE)
+        timeline = make_timeline(storyboard, [6] * 6)
+        for block in captions_srt(timeline).strip().split("\n\n"):
+            lines = block.splitlines()[2:]
+            self.assertLessEqual(len(lines), 2)
+            for line in lines:
+                self.assertLessEqual(len(line), 24)
+
 
 class VoiceTests(unittest.TestCase):
     def test_free_diagnostic_tone_writes_real_wav(self):

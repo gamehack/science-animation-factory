@@ -71,7 +71,9 @@ def captions_srt(timeline: list[TimedScene]) -> str:
         words = scene.narration.split()
         current: list[str] = []
         for word in words:
-            if current and (len(" ".join(current + [word])) > 60 or len(current) >= 10):
+            # Restrict each card to roughly two short lines on a 9:16 phone.
+            # Longer phrases collide with the center-stage visual vocabulary.
+            if current and (len(" ".join(current + [word])) > 38 or len(current) >= 7):
                 phrases.append(" ".join(current))
                 current = []
             current.append(word)
@@ -85,7 +87,7 @@ def captions_srt(timeline: list[TimedScene]) -> str:
             elapsed_words += weight
             end = scene.start + scene.audio_duration * elapsed_words / total_words
             count += 1
-            wrapped = "\n".join(textwrap.wrap(phrase, width=32, break_long_words=False))
+            wrapped = "\n".join(textwrap.wrap(phrase, width=24, break_long_words=False))
             entries.append(f"{count}\n{_srt_time(start)} --> {_srt_time(end)}\n{wrapped}\n")
     return "\n".join(entries) + "\n"
 
