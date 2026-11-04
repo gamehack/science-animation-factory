@@ -70,6 +70,29 @@ Tone jobs are marked `PREVIEW_ONLY` and **must not be published**.
 science-factory build examples/moon_orbit.json --voice tone --quality preview
 ```
 
+## Render a sample using GitHub Actions (no local setup)
+
+The repository's **Render science demo** workflow uses GitHub's standard
+Ubuntu runner and downloads the CPU-only PyTorch wheel, Manim, FFmpeg and
+Kokoro. It generates a narrated sample with the committed Moon-orbit storyboard.
+No API keys or paid model services are required.
+
+1. Open **Actions → Render science demo → Run workflow** on the `main` branch.
+2. Keep `quality=preview` for the first attempt (360×640). Select `full` only
+   after successfully inspecting a preview.
+3. When the job succeeds, open the workflow run and download the artifact
+   named `science-moon-demo-*` from the **Artifacts** section.
+4. Check `final.mp4`, `captions.srt`, `manifest.json` and the scene review images.
+
+The workflow also runs automatically **once when its file first lands on main**
+(or when the workflow file is deliberately changed later). It is not scheduled
+and does not publish to any social account. Artifacts expire after **one day**
+to limit storage usage. Save any sample you want to retain.
+
+GitHub currently provides free standard hosted-runner compute on public
+repositories, but artifact storage has separate plan limits. No large model
+weights or intermediate render caches are uploaded as artifacts.
+
 ### Run the core tests
 
 The schema, duration planning, captions and diagnostic audio tests use only
