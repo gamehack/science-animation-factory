@@ -24,7 +24,7 @@ permissions:
 
 concurrency:
   group: render-science-demo
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   render:
@@ -45,13 +45,19 @@ jobs:
           python-version: '3.12'
 
       - name: Install native graphics, audio and font dependencies
+        timeout-minutes: 5
         run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends \
+          # Runner images already have APT indexes. Avoid an unbounded refresh:
+          # Ubuntu 24.04 Azure mirrors can stall during apt-get update.
+          export DEBIAN_FRONTEND=noninteractive
+          timeout -k 10s 240s sudo apt-get install -y --no-install-recommends \
+            -o Acquire::Retries=2 -o Acquire::http::Timeout=30 \
+            -o Acquire::https::Timeout=30 \
             build-essential pkg-config libcairo2-dev libpango1.0-dev \
             ffmpeg espeak-ng fonts-dejavu-core
 
       - name: Install CPU-only PyTorch and science factory
+        timeout-minutes: 25
         run: |
           python -m pip install --upgrade pip
           python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
@@ -64,6 +70,7 @@ jobs:
           python -m science_factory validate examples/moon_orbit.json
 
       - name: Render sample video with real local narration
+        timeout-minutes: 20
         env:
           REQUESTED_QUALITY: ${{ inputs.quality || 'preview' }}
         run: |
