@@ -5,7 +5,7 @@ from datetime import datetime,timezone
 from pathlib import Path
 from .audio import trim_wav_edges
 from .jobs import JobStore,sha256_file
-from .media import extract_scene_stills,inspect_mp4,mux_video,require_tools,scan_media_quality
+from .media import extract_scene_stills,inspect_mp4,measure_audio_quality,mux_video,require_tools,scan_media_quality
 from .quality import QualityReport
 from .providers import default_registry
 from .schema import Storyboard
@@ -107,7 +107,7 @@ def build(storyboard_file:Path,*,output_root:Path,voice:str="kokoro",quality:str
    jobs.complete_stage("composed",{"final.mp4":sha256_file(finished)})
   width,height=(360,640) if quality=="preview" else (1080,1920)
   checks=inspect_mp4(finished,expected_width=width,expected_height=height,target_duration=total_duration)
-  checks.update(scan_media_quality(finished));stills=extract_scene_stills(finished,timeline,directory)
+  checks.update(scan_media_quality(finished));checks.update(measure_audio_quality(finished));stills=extract_scene_stills(finished,timeline,directory)
   jobs.complete_stage("technical_qa",{"final.mp4":sha256_file(finished)})
   report=QualityReport(technical_passed=True)
   final_status="TECHNICALLY_READY" if voice=="kokoro" else "PREVIEW_ONLY"

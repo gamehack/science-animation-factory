@@ -152,10 +152,9 @@ def scan_media_quality(path: Path, *, max_silence: float = 2.6) -> dict:
         raise MediaError(f"black video segment detected: {max(black_segments):.2f}s")
     if any(duration > max_silence for duration in quiet_segments):
         raise MediaError(f"excessive speech silence: {max(quiet_segments):.2f}s")
-    audio_metrics = measure_audio_quality(path)
     return {"max_black_seconds": round(max(black_segments, default=0.0), 3),
             "max_silence_seconds": round(max(quiet_segments, default=0.0), 3),
-            "silence_threshold_db": -38, **audio_metrics}
+            "silence_threshold_db": -38}
 
 
 def parse_ebur128_summary(stderr: str) -> tuple[float, float]:
