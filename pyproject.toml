@@ -22,3 +22,6 @@ science-factory = "science_factory.cli:main"
 [tool.setuptools.packages.find]
 include = ["science_factory*"]
 
+[tool.setuptools.package-data]
+science_factory = ["assets/*.png", "assets/*.json"]
+

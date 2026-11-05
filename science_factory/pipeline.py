@@ -39,6 +39,8 @@ def build(storyboard_file: Path, *, output_root: Path, voice: str = "kokoro",
     directory = output_root.resolve() / run_id
     directory.mkdir(parents=True, exist_ok=False)
     source_bytes = storyboard_file.read_bytes()
+    asset_provenance = json.loads((Path(__file__).resolve().parent / "assets" / "provenance.json")
+                                  .read_text(encoding="utf-8"))
     manifest = {
         "run_id": run_id,
         "status": "RUNNING",
@@ -47,6 +49,11 @@ def build(storyboard_file: Path, *, output_root: Path, voice: str = "kokoro",
         "quality": quality,
         "storyboard_sha256": hashlib.sha256(source_bytes).hexdigest(),
         "source_urls": list(storyboard.sources),
+        "visual_asset_credits": {
+            name: {"source": item["source"], "credit": item["credit"],
+                   "sha256": item["generated_sha256"]}
+            for name, item in asset_provenance.items()
+        },
         "started_at": datetime.now(timezone.utc).isoformat(),
     }
     manifest_file = directory / "manifest.json"

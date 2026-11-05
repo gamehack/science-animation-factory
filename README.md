@@ -132,6 +132,22 @@ These scientific illustrations are **schematic, not physically to scale**.
 An eventual fact-checking step must verify that a template's use does not
 misrepresent the relevant mechanism.
 
+### M1.1 — NASA-image-based celestial visuals
+
+The `orbit` template uses transparent, photographic Earth and Moon discs
+prepared from [NASA 3D Resources](https://github.com/nasa/NASA-3D-Resources).
+The Moon's actual craters and Earth's land/ocean textures replace the former
+flat circles. Atmosphere-inspired glow and a lightweight starfield add depth;
+the gravitational arrow updates continuously to point from the orbiting Moon
+toward Earth's center. This is still a **2.5D schematic**, not a physically
+scaled three-body simulation or a GPU-based 3D renderer.
+
+Both language versions use **identical visual assets**. The two small PNGs are
+committed in `science_factory/assets/` and packaged with the application, so
+video jobs do not depend on downloading external images. `assets/SOURCES.md`
+records the primary sources and provenance. A separate one-time preparation
+script can regenerate the discs and verify NASA Git blob hashes.
+
 ## Files produced by each job
 
 Each run gets its own immutable folder under `output/<timestamp>-<id>/`:
@@ -165,7 +181,9 @@ detection, audio peak measurements, and retry/resume state transitions. Thus
 
 ## Roadmap
 
-- **M1** (current): JSON → local TTS → Manim → FFmpeg → technical QA → MP4.
+- **M1** (complete): JSON → local TTS → Manim → FFmpeg → technical QA → bilingual MP4.
+- **M1.1** (current): NASA-image-based Earth/Moon visuals, atmospheric glow,
+  correct moving gravity vector, reusable offline asset package.
 - **M2**: scheduled topic intake, cited research, free-model adapter, fact gates,
   storyboard generation, bounded retries, resumable job store, automatic rejection.
 - **M3**: 20-topic unattended acceptance test, visual QA, resource profiling,

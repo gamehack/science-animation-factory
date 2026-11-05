@@ -1,0 +1,18 @@
+{
+  "earth": {
+    "source": "https://raw.githubusercontent.com/nasa/NASA-3D-Resources/master/Images%20and%20Textures/Earth%20(A)/Earth%20(A).jpg",
+    "source_git_blob_sha1": "6adcb9237e3240b804bc4b932aadd8a08635054d",
+    "source_sha256": "5e18afce2860f02a215c09954fff5d3d1ca140cafa26c368d24d7636dd6705a7",
+    "generated_sha256": "3820add38e8fa37131f6ce55ce4499e882b07c322ddd6dd0f1451f32eb0d1af9",
+    "center_longitude_deg": -25.0,
+    "credit": "NASA 3D Resources"
+  },
+  "moon": {
+    "source": "https://raw.githubusercontent.com/nasa/NASA-3D-Resources/master/Images%20and%20Textures/Moon/Moon.jpg",
+    "source_git_blob_sha1": "e39f899b3f37e39c75acbe405018157dcfba8b0b",
+    "source_sha256": "1318334a5089fb186d39996f60677b5f5b42cde74158ceff97b3e2283bfd41d4",
+    "generated_sha256": "f34cf26b2fb227207b64916efff4d6802cdb22554dd57530441e8cd24f10bd7d",
+    "center_longitude_deg": 0.0,
+    "credit": "NASA 3D Resources"
+  }
+}

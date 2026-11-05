@@ -14,6 +14,10 @@ from pathlib import Path
 import numpy as np
 from manim import *  # noqa: F403 - Manim's animation vocabulary
 
+from science_factory.visuals.celestial_body import earth as make_earth
+from science_factory.visuals.celestial_body import moon as make_moon
+from science_factory.visuals.orbit_math import inward_arrow
+
 
 config.frame_width = 8
 config.frame_height = 8 * 16 / 9
@@ -33,15 +37,30 @@ def _label(value: str, *, size: int = 28, width: float = 3.1):
 
 
 def _orbit(params: dict):
-    path = Circle(radius=2.05, color=MUTED, stroke_width=2).shift(UP * 0.5)
-    planet = Circle(radius=0.85, color="#3484B8", fill_opacity=1).move_to(path.get_center())
-    moon = Dot(path.point_from_proportion(0), radius=0.22, color=HIGHLIGHT)
-    arrow = Arrow(path.get_center() + RIGHT * 1.8, path.get_center() + RIGHT * 1.0,
-                  color=ACCENT, buff=0, stroke_width=5)
-    names = VGroup(_label(params.get("center", "Earth")), _label(params.get("object", "Moon")))
-    names[0].next_to(planet, DOWN, buff=0.3)
-    names[1].next_to(moon, RIGHT, buff=0.3)
-    return VGroup(path, planet, moon, arrow, names), MoveAlongPath(moon, path)
+    path = Circle(radius=2.05, color=MUTED, stroke_width=2,
+                  stroke_opacity=0.65).shift(UP * 0.5)
+    planet = make_earth().move_to(path.get_center())
+    satellite = make_moon().move_to(path.point_from_proportion(0))
+
+    def gravity_arrow():
+        # Earth always pulls the Moon toward Earth's CENTER, regardless of
+        # the Moon's position on the orbit. Unlike the old static arrow, this
+        # direction updates continuously while the satellite moves.
+        start, end = inward_arrow(planet.get_center(), satellite.get_center())
+        return Arrow(start, end, color=ACCENT, buff=0,
+                     stroke_width=4.5, tip_length=0.14)
+
+    pull = always_redraw(gravity_arrow)
+    earth_name = _label(params.get("center", "Earth")).next_to(planet, DOWN, buff=0.24)
+    moon_name = _label(params.get("object", "Moon"))
+    moon_name.add_updater(lambda label: label.next_to(satellite, RIGHT, buff=0.22))
+    moon_name.update()
+    # Tiny fixed stars add depth without distracting from the science diagram.
+    positions = [(-3.0, 2.7), (-2.3, -2.0), (-0.1, 3.1), (2.65, -2.4),
+                 (3.05, 2.1), (-3.2, -0.1), (0.4, -3.0), (1.45, 3.0)]
+    stars = VGroup(*[Dot(np.array([x, y, 0]), radius=0.025, color="#7896AA",
+                        fill_opacity=0.37) for x, y in positions])
+    return Group(stars, path, planet, satellite, pull, earth_name, moon_name), MoveAlongPath(satellite, path)
 
 
 def _comparison(params: dict):

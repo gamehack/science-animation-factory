@@ -1,5 +1,8 @@
 import copy
+import hashlib
 import json
+import math
+import struct
 import tempfile
 import unittest
 from pathlib import Path
@@ -8,6 +11,7 @@ from science_factory.cli import main
 from science_factory.schema import Storyboard, StoryboardError
 from science_factory.timeline import captions_srt, make_timeline
 from science_factory.voice import VoiceError, generate_voice, wav_duration
+from science_factory.visuals.orbit_math import inward_arrow
 
 
 EXAMPLE = Path(__file__).resolve().parents[1] / "examples" / "moon_orbit.json"
@@ -130,6 +134,33 @@ class VoiceTests(unittest.TestCase):
             file = Path(directory) / "tone.wav"
             with self.assertRaises(VoiceError):
                 generate_voice("bonjour", file, backend="tone", language="fr-FR")
+
+
+class VisualAssetTests(unittest.TestCase):
+    def test_nasa_discs_are_committed_and_match_provenance(self):
+        directory = EXAMPLE.parents[1] / "science_factory" / "assets"
+        provenance = json.loads((directory / "provenance.json").read_text(encoding="utf-8"))
+        for body in ("earth", "moon"):
+            data = (directory / f"{body}_disc.png").read_bytes()
+            self.assertTrue(data.startswith(b"\x89PNG\r\n\x1a\n"))
+            self.assertEqual(struct.unpack(">II", data[16:24]), (512, 512))
+            self.assertEqual(hashlib.sha256(data).hexdigest(),
+                             provenance[body]["generated_sha256"])
+            self.assertIn("raw.githubusercontent.com/nasa/", provenance[body]["source"])
+
+    def test_gravity_arrow_points_inward_everywhere_on_orbit(self):
+        center = (0.0, 0.5, 0.0)
+        for angle in (0, math.pi / 4, math.pi / 2, math.pi, 1.5 * math.pi):
+            position = (2.05 * math.cos(angle), 0.5 + 2.05 * math.sin(angle), 0.0)
+            start, end = inward_arrow(center, position)
+            distance_start = math.dist(center, start)
+            distance_end = math.dist(center, end)
+            self.assertLess(distance_end, distance_start)
+            self.assertAlmostEqual(distance_start - distance_end, 0.61, places=6)
+
+    def test_gravity_arrow_rejects_degenerate_orbit(self):
+        with self.assertRaises(ValueError):
+            inward_arrow((0, 0, 0), (0, 0, 0))
 
 
 if __name__ == "__main__":

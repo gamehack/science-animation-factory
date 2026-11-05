@@ -18,6 +18,9 @@ on:
       - main
     paths:
       - .github/workflows/render-demo.yml
+      - science_factory/render_scenes.py
+      - 'science_factory/visuals/**'
+      - 'science_factory/assets/**'
 
 permissions:
   contents: read
@@ -81,6 +84,14 @@ jobs:
           python -m unittest discover -s tests -v
           python -m science_factory validate examples/moon_orbit.json
           python -m science_factory validate examples/moon_orbit.zh-CN.json
+          python - <<'PY'
+          from pathlib import Path
+          from PIL import Image
+          for name in ('earth', 'moon'):
+              path = Path(f'science_factory/assets/{name}_disc.png')
+              with Image.open(path) as body:
+                  assert body.mode == 'RGBA' and body.size == (512, 512)
+          PY
 
       - name: Render sample video with real local narration
         timeout-minutes: 20
