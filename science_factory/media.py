@@ -157,6 +157,36 @@ def scan_media_quality(path: Path, *, max_silence: float = 2.6) -> dict:
             "silence_threshold_db": -38}
 
 
+def parse_ebur128_summary(stderr: str) -> tuple[float, float]:
+    """Extract integrated loudness and true peak from FFmpeg ebur128 output."""
+    integrated = re.findall(r"^\s*I:\s*(-?[0-9]+(?:\.[0-9]+)?)\s*LUFS", stderr, re.MULTILINE)
+    peaks = re.findall(r"^\s*Peak:\s*(-?[0-9]+(?:\.[0-9]+)?)\s*dBFS", stderr, re.MULTILINE)
+    if not integrated or not peaks:
+        raise MediaError("could not parse FFmpeg ebur128 loudness/true-peak summary")
+    return float(integrated[-1]), float(peaks[-1])
+
+
+def measure_audio_quality(path: Path, *, target_lufs: float = -16.0,
+                          loudness_tolerance: float = 2.0,
+                          max_true_peak_dbfs: float = -1.0) -> dict:
+    """Measure final encoded audio; reject unexpected loudness or true peak."""
+    require_tools("ffmpeg")
+    result = subprocess.run(["ffmpeg", "-hide_banner", "-nostats", "-i", str(path),
+                             "-af", "ebur128=peak=true", "-f", "null", "-"],
+                            text=True, capture_output=True, check=False, timeout=300)
+    if result.returncode:
+        raise MediaError(f"audio loudness measurement failed: {result.stderr[-1000:]}")
+    integrated, peak = parse_ebur128_summary(result.stderr)
+    if abs(integrated - target_lufs) > loudness_tolerance:
+        raise MediaError(f"integrated loudness {integrated:.1f} LUFS outside target")
+    if peak > max_true_peak_dbfs:
+        raise MediaError(f"true peak {peak:.1f} dBFS exceeds ceiling {max_true_peak_dbfs:.1f}")
+    return {"integrated_loudness_lufs": round(integrated, 2),
+            "true_peak_dbfs": round(peak, 2),
+            "loudness_target_lufs": target_lufs,
+            "true_peak_ceiling_dbfs": max_true_peak_dbfs}
+
+
 def extract_scene_stills(video: Path, timeline: list[TimedScene], destination: Path) -> list[str]:
     """Three timed samples per beat reveal entrances, motion and exits."""
     require_tools("ffmpeg")
