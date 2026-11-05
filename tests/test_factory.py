@@ -72,6 +72,17 @@ class StoryboardTests(unittest.TestCase):
             with self.assertRaises(StoryboardError):
                 Storyboard.from_dict(data)
 
+    def test_unknown_schema_version_rejected(self):
+        data = copy.deepcopy(self.data)
+        data["schema_version"] = 999
+        with self.assertRaises(StoryboardError):
+            Storyboard.from_dict(data)
+
+    def test_legacy_unversioned_storyboard_defaults_to_v1(self):
+        data = copy.deepcopy(self.data)
+        data.pop("schema_version", None)
+        self.assertEqual(Storyboard.from_dict(data).schema_version, 1)
+
     def test_unknown_template_rejected(self):
         data = copy.deepcopy(self.data)
         data["scenes"][0]["kind"] = "eval_python"
