@@ -64,6 +64,34 @@ def _orbit(params: dict):
     return Group(stars, path, planet, satellite, pull, earth_name, moon_name), MoveAlongPath(satellite, path)
 
 
+def _orbit_intro(params: dict):
+    """A close tracking shot, distinct from the later explanatory orbit."""
+    center = LEFT * 1.25 + DOWN * 0.32
+    earth = make_earth(radius=1.33).move_to(center)
+    path = Arc(radius=2.38, start_angle=17 * DEGREES,
+               angle=154 * DEGREES, arc_center=center,
+               color=HIGHLIGHT, stroke_width=4, stroke_opacity=0.50)
+    moon = make_moon(radius=0.30).move_to(path.get_start())
+    gravity = always_redraw(lambda: Arrow(
+        *inward_arrow(earth.get_center(), moon.get_center(), length=1.08),
+        buff=0, color=ACCENT, stroke_width=5, tip_length=0.16))
+    return Group(path, earth, moon, gravity), MoveAlongPath(moon, path)
+
+
+def _orbit_recap(params: dict):
+    """Leave a bright partial trail to emphasize *continuous* free fall."""
+    center = UP * 0.45
+    path = Circle(radius=2.04, color=MUTED, stroke_width=2,
+                  stroke_opacity=0.42).move_to(center)
+    earth = make_earth(radius=0.82).move_to(center)
+    moon = make_moon(radius=0.27).move_to(path.point_from_proportion(0))
+    trace = TracedPath(moon.get_center, stroke_color=HIGHLIGHT,
+                       stroke_width=5, dissipating_time=3.2)
+    idea = _label(params.get("note", "Always falling, never hitting"),
+                  size=26, width=6.6).move_to(DOWN * 2.12)
+    return Group(path, trace, earth, moon, idea), MoveAlongPath(moon, path)
+
+
 def _comparison(params: dict):
     left = RoundedRectangle(width=3.5, height=4.0, corner_radius=0.2, color=ACCENT)
     right = RoundedRectangle(width=3.5, height=4.0, corner_radius=0.2, color=HIGHLIGHT)
@@ -171,8 +199,97 @@ def _particles(params: dict):
     return VGroup(dots, label), AnimationGroup(*[MoveAlongPath(dot, path) for dot, path in zip(dots, paths)])
 
 
+def _speaker(x: float = -2.8):
+    box = RoundedRectangle(width=0.64, height=1.3, corner_radius=0.13,
+                           color=ACCENT, fill_color="#1E455C", fill_opacity=0.95)
+    box.move_to(np.array([x - 0.24, 0.55, 0]))
+    cone = Polygon(np.array([x, 0.86, 0]), np.array([x + 0.77, 1.25, 0]),
+                   np.array([x + 0.77, -0.15, 0]), np.array([x, 0.25, 0]),
+                   color=ACCENT, fill_color="#27627E", fill_opacity=0.95)
+    return VGroup(box, cone)
+
+
+def _sound_source(params: dict):
+    speaker = _speaker()
+    waves = VGroup(*[
+        Arc(radius=r, start_angle=-62 * DEGREES, angle=124 * DEGREES,
+            arc_center=LEFT * 2.0 + UP * 0.55, color=HIGHLIGHT,
+            stroke_width=5, stroke_opacity=1 - i * 0.16)
+        for i, r in enumerate((0.85, 1.55, 2.28, 3.0))
+    ])
+    label = _label(params.get("note", "Vibrations spread through air"),
+                   size=27, width=6.3).move_to(DOWN * 2.15)
+    return VGroup(speaker, waves, label), LaggedStart(
+        *[Create(wave) for wave in waves], lag_ratio=0.25)
+
+
+def _sound_medium(params: dict):
+    """Dots transfer a longitudinal displacement, without bulk matter flow."""
+    dots = VGroup()
+    for i in range(9):
+        for j in (-1, 0, 1):
+            dots.add(Dot(np.array([-3 + i * 0.74, j * 0.61 + 0.55, 0]),
+                         radius=0.078, color=ACCENT))
+    arrow = Arrow(LEFT * 2.9 + DOWN * 0.75, RIGHT * 2.9 + DOWN * 0.75,
+                  color=HIGHLIGHT, stroke_width=5, buff=0)
+    label = _label(params.get("note", "Energy moves, particles vibrate"),
+                   size=27, width=6.6).move_to(DOWN * 2.20)
+    motions = [dots[i].animate.shift(RIGHT * (0.22 if (i // 3) % 2 == 0 else -0.16))
+               for i in range(len(dots))]
+    return VGroup(dots, arrow, label), LaggedStart(*motions, lag_ratio=0.10)
+
+
+def _sound_vacuum(params: dict):
+    """Air has transmitting particles; empty space has none."""
+    air = VGroup(*[Dot(np.array([-3.35 + i * 0.48, 0.25 + j * 0.55, 0]),
+                       radius=0.072, color=ACCENT)
+                   for i in range(7) for j in (-1, 0, 1)])
+    border = DashedLine(UP * 1.90, DOWN * 1.30, color=MUTED, dash_length=0.15)
+    air_label = _label(params.get("left", "Air"), size=29, width=3).move_to(LEFT * 1.9 + DOWN * 1.65)
+    empty_label = _label(params.get("right", "Vacuum"), size=29, width=3).move_to(RIGHT * 1.9 + DOWN * 1.65)
+    wave = Arc(radius=0.83, start_angle=-65 * DEGREES,
+               angle=130 * DEGREES, arc_center=LEFT * 1.45 + UP * 0.25,
+               stroke_width=6, color=HIGHLIGHT)
+    blocked = VGroup(Line(RIGHT * 1.30 + UP * 0.95, RIGHT * 2.35 + DOWN * 0.15,
+                          color="#F07575", stroke_width=7),
+                     Line(RIGHT * 2.35 + UP * 0.95, RIGHT * 1.30 + DOWN * 0.15,
+                          color="#F07575", stroke_width=7))
+    return (VGroup(air, border, wave, blocked, air_label, empty_label),
+            LaggedStart(Create(wave), FadeIn(blocked), lag_ratio=0.55))
+
+
+def _sound_receiver(params: dict):
+    speaker = _speaker(-3.15)
+    listener = Circle(radius=0.55, color=HIGHLIGHT,
+                      fill_color="#4D4937", fill_opacity=0.50).move_to(RIGHT * 2.8 + UP * 0.55)
+    dots = VGroup(*[Dot(np.array([-1.7 + i * 0.45, 0.55, 0]),
+                       radius=0.065, color=ACCENT) for i in range(9)])
+    signal = Dot(LEFT * 1.85 + UP * 0.55, radius=0.16, color=HIGHLIGHT)
+    route = Line(LEFT * 1.85 + UP * 0.55, RIGHT * 2.05 + UP * 0.55)
+    label = _label(params.get("note", "Sound reaches a listener through matter"),
+                   size=26, width=6.8).move_to(DOWN * 2.15)
+    return VGroup(speaker, dots, signal, listener, label), MoveAlongPath(signal, route)
+
+
+def _sound_recap(params: dict):
+    air = VGroup(*[Dot(np.array([-2.7 + i * 0.54, 0.55, 0]), radius=0.07,
+                       color=ACCENT) for i in range(6)])
+    waves = VGroup(*[Arc(radius=r, start_angle=-70 * DEGREES,
+                         angle=140 * DEGREES, arc_center=LEFT * 2.7 + UP * 0.55,
+                         color=HIGHLIGHT, stroke_width=5) for r in (0.65, 1.2, 1.85)])
+    dividing = DashedLine(UP * 2.0, DOWN * 1.4, color=MUTED)
+    cross = Cross(Circle(radius=0.43).move_to(RIGHT * 2 + UP * 0.55),
+                  stroke_color="#F07575", stroke_width=8)
+    label = _label(params.get("note", "No particles, no sound"),
+                   size=30, width=6.7).move_to(DOWN * 2.12)
+    return VGroup(air, waves, dividing, cross, label), LaggedStart(
+        *[Create(w) for w in waves], FadeIn(cross), lag_ratio=0.21)
+
+
 BUILDER = {
     "orbit": _orbit,
+    "orbit_intro": _orbit_intro,
+    "orbit_recap": _orbit_recap,
     "comparison": _comparison,
     "physics_vectors": _physics_vectors,
     "throw_orbit": _throw_orbit,
@@ -180,6 +297,11 @@ BUILDER = {
     "force": _force,
     "scale": _scale,
     "particles": _particles,
+    "sound_source": _sound_source,
+    "sound_medium": _sound_medium,
+    "sound_vacuum": _sound_vacuum,
+    "sound_receiver": _sound_receiver,
+    "sound_recap": _sound_recap,
 }
 
 

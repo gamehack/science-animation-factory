@@ -8,10 +8,12 @@ import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
-from .media import extract_scene_stills, inspect_mp4, mux_video, render_manim, require_tools
+from .audio import trim_wav_edges
+from .media import (extract_scene_stills, inspect_mp4, mux_video,
+                    render_manim, require_tools, scan_media_quality)
 from .schema import Storyboard
 from .timeline import make_timeline, save_captions
-from .voice import generate_voice
+from .voice import VoiceCue, generate_voice
 
 
 class BuildError(RuntimeError):
@@ -62,27 +64,45 @@ def build(storyboard_file: Path, *, output_root: Path, voice: str = "kokoro",
     try:
         wavs: list[Path] = []
         audio_durations: list[float] = []
+        chunk_cues: list[list[VoiceCue]] = []
+        timing_evidence: list[dict] = []
         for index, scene in enumerate(storyboard.scenes):
             file = directory / f"voice_{index:02}.wav"
-            duration = generate_voice(scene.narration, file, backend=voice,
-                                      language=storyboard.language)
+            cues: list[VoiceCue] = []
+            raw_duration = generate_voice(scene.narration, file, backend=voice,
+                                          language=storyboard.language, cues_out=cues)
+            trim_result = trim_wav_edges(file)
+            duration = trim_result.duration
+            chunk_cues.append([
+                VoiceCue(cue.text, max(0.0, cue.start - trim_result.removed_start),
+                         min(duration, cue.end - trim_result.removed_start))
+                for cue in cues if cue.end > trim_result.removed_start
+                and cue.start < trim_result.removed_start + duration
+            ])
             wavs.append(file)
             audio_durations.append(duration)
+            timing_evidence.append({"scene": index, "raw_voice_seconds": round(raw_duration, 3),
+                                    "trimmed_voice_seconds": round(duration, 3),
+                                    "trim_start_seconds": round(trim_result.removed_start, 3),
+                                    "trim_end_seconds": round(trim_result.removed_end, 3),
+                                    "tts_chunks": len(chunk_cues[-1])})
         timeline = make_timeline(storyboard, audio_durations)
         total_duration = timeline[-1].start + timeline[-1].duration
         plan = directory / "render-plan.json"
         _write_json(plan, {"scenes": [scene.to_dict() for scene in timeline]})
         subtitles = directory / "captions.srt"
-        save_captions(timeline, subtitles)
+        save_captions(timeline, subtitles, cues_by_scene=chunk_cues)
         silent = render_manim(plan, directory, quality=quality)
         finished = directory / "final.mp4"
         mux_video(silent, wavs, timeline, subtitles, finished)
         width, height = (360, 640) if quality == "preview" else (1080, 1920)
         checks = inspect_mp4(finished, expected_width=width, expected_height=height,
                              target_duration=total_duration)
+        checks.update(scan_media_quality(finished))
         stills = extract_scene_stills(finished, timeline, directory)
         manifest.update({"status": "READY" if voice == "kokoro" else "PREVIEW_ONLY",
                          "checks": checks,
+                         "voice_timing": timing_evidence,
                          "review_frames": stills,
                          "duration_seconds": round(total_duration, 3),
                          "finished_at": datetime.now(timezone.utc).isoformat()})

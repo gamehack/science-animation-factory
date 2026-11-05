@@ -7,7 +7,7 @@
   ],
   "scenes": [
     {
-      "kind": "orbit",
+      "kind": "orbit_intro",
       "title": "Why doesn't the Moon fall?",
       "narration": "Why doesn't the Moon fall straight down to Earth? It actually is falling, all the time.",
       "params": {"center": "Earth", "object": "Moon"}
@@ -37,10 +37,10 @@
       "params": {"left": "Slow: lands", "right": "Fast: keeps falling"}
     },
     {
-      "kind": "orbit",
+      "kind": "orbit_recap",
       "title": "That's an orbit",
       "narration": "An orbit is continuous free fall around another object, rather than a straight fall into it.",
-      "params": {"center": "Earth", "object": "Moon"}
+      "params": {"note": "Always falling, never hitting"}
     }
   ]
 }

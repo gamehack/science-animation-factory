@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -86,7 +87,8 @@ def mux_video(silent_mp4: Path, wav_files: list[Path],
         filters.append(f"[{index + 1}:a]adelay={round(scene.start * 1000)}:all=1[{label}]")
         labels.append(f"[{label}]")
     filters.append(f"{''.join(labels)}amix=inputs={len(labels)}:duration=longest:normalize=0[mixed]")
-    filters.append("[mixed]apad[aout]")
+    # Normalize speech across languages; constrain true peak for mobile players.
+    filters.append("[mixed]loudnorm=I=-16:TP=-1.5:LRA=11,apad[aout]")
     total_seconds = timeline[-1].start + timeline[-1].duration
     # Reserve the bottom UI band used by Facebook Reels and similar apps.
     style = subtitle_style(timeline[0].language)
@@ -119,6 +121,8 @@ def inspect_mp4(path: Path, *, expected_width: int, expected_height: int,
         raise MediaError("incorrect output dimensions")
     if video.get("codec_name") != "h264":
         raise MediaError("video must use H.264 for broad mobile compatibility")
+    if audios[0].get("codec_name") != "aac":
+        raise MediaError("audio must use AAC for broad mobile compatibility")
     actual = float(info["format"]["duration"])
     if abs(actual - target_duration) > 0.6:
         raise MediaError(f"audio/video timeline mismatch: {actual:.2f}s vs {target_duration:.2f}s")
@@ -127,16 +131,43 @@ def inspect_mp4(path: Path, *, expected_width: int, expected_height: int,
             "audio_codec": audios[0]["codec_name"], "bytes": path.stat().st_size}
 
 
+def scan_media_quality(path: Path, *, max_silence: float = 2.6) -> dict:
+    """Reject unusually long dead-air intervals and black sections.
+
+    A dark-but-colored astronomy background is not black under pix_th=0.025.
+    This remains a technical gate, never a substitute for scientific review.
+    """
+    require_tools("ffmpeg")
+    command = ["ffmpeg", "-hide_banner", "-nostats", "-i", str(path),
+               "-vf", "blackdetect=d=0.45:pix_th=0.025:pic_th=0.99",
+               "-af", "silencedetect=noise=-38dB:d=1.2",
+               "-f", "null", "-"]
+    result = subprocess.run(command, text=True, capture_output=True, check=False,
+                            timeout=300)
+    if result.returncode:
+        raise MediaError(f"technical A/V scan failed: {result.stderr[-1000:]}")
+    black_segments = [float(x) for x in re.findall(r"black_duration:\s*([0-9.]+)", result.stderr)]
+    quiet_segments = [float(x) for x in re.findall(r"silence_duration:\s*([0-9.]+)", result.stderr)]
+    if any(duration >= 0.45 for duration in black_segments):
+        raise MediaError(f"black video segment detected: {max(black_segments):.2f}s")
+    if any(duration > max_silence for duration in quiet_segments):
+        raise MediaError(f"excessive speech silence: {max(quiet_segments):.2f}s")
+    return {"max_black_seconds": round(max(black_segments, default=0.0), 3),
+            "max_silence_seconds": round(max(quiet_segments, default=0.0), 3),
+            "silence_threshold_db": -38}
+
+
 def extract_scene_stills(video: Path, timeline: list[TimedScene], destination: Path) -> list[str]:
-    """One mid-scene JPEG per beat for review without another video render."""
+    """Three timed samples per beat reveal entrances, motion and exits."""
     require_tools("ffmpeg")
     names: list[str] = []
     for scene in timeline:
-        name = f"scene_{scene.index:02}_review.jpg"
-        moment = scene.start + scene.duration / 2
-        _run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
-              "-ss", f"{moment:.3f}", "-i", str(video),
-              "-frames:v", "1", "-q:v", "3", str((destination / name).resolve())], timeout=120)
-        names.append(name)
+        for label, fraction in (("opening", 0.12), ("middle", 0.50), ("closing", 0.88)):
+            name = f"scene_{scene.index:02}_{label}_review.jpg"
+            moment = scene.start + scene.duration * fraction
+            _run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
+                  "-ss", f"{moment:.3f}", "-i", str(video),
+                  "-frames:v", "1", "-q:v", "3", str((destination / name).resolve())], timeout=120)
+            names.append(name)
     return names
 

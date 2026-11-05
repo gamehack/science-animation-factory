@@ -5,7 +5,7 @@
   "sources": ["https://science.nasa.gov/moon/facts/"],
   "scenes": [
     {
-      "kind": "orbit",
+      "kind": "orbit_intro",
       "title": "月球为什么不掉下来？",
       "narration": "月球为什么没有直接掉到地球上？其实，月球一直在下落，只是它下落的方式与你想的不一样。",
       "params": {"center": "地球", "object": "月球"}
@@ -35,10 +35,10 @@
       "params": {"left": "速度慢：落地", "right": "速度快：沿轨道飞"}
     },
     {
-      "kind": "orbit",
+      "kind": "orbit_recap",
       "title": "这就是轨道运动",
       "narration": "月球的轨道运动可以理解为围绕地球的持续自由落体，而不是直接撞向地球。",
-      "params": {"center": "地球", "object": "月球"}
+      "params": {"note": "一直下落，却没有撞上地球"}
     }
   ]
 }

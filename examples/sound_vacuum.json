@@ -1,0 +1,46 @@
+{
+  "title": "Why Is Space Silent?",
+  "language": "en-US",
+  "target_seconds": 45,
+  "sources": [
+    "https://science.nasa.gov/ems/02_anatomy/"
+  ],
+  "scenes": [
+    {
+      "kind": "sound_source",
+      "title": "Why is space silent?",
+      "narration": "Movies show explosions booming in space. But would an astronaut really hear one?",
+      "params": {"note": "Sound starts with a vibration"}
+    },
+    {
+      "kind": "sound_medium",
+      "title": "Sound needs a medium",
+      "narration": "Sound is a mechanical wave. It travels as nearby particles push and pull one another.",
+      "params": {"note": "Particles oscillate; energy travels"}
+    },
+    {
+      "kind": "wave",
+      "title": "A pattern of pressure",
+      "narration": "In air, those vibrations create alternating compressions and rarefactions, carrying energy forward.",
+      "params": {"note": "Pressure varies through the air"}
+    },
+    {
+      "kind": "sound_vacuum",
+      "title": "But space is nearly empty",
+      "narration": "In a vacuum, there are too few particles to carry ordinary sound waves from place to place.",
+      "params": {"left": "Air: carries sound", "right": "Vacuum: no sound"}
+    },
+    {
+      "kind": "sound_receiver",
+      "title": "You need a path to hear",
+      "narration": "Your ear hears vibrations only when a material like air can transmit them to you.",
+      "params": {"note": "Matter carries vibrations to your ear"}
+    },
+    {
+      "kind": "sound_recap",
+      "title": "No medium, no sound",
+      "narration": "So space isn't silent because nothing happens. It's silent because sound has no medium to travel through.",
+      "params": {"note": "A vacuum cannot carry ordinary sound"}
+    }
+  ]
+}

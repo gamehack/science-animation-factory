@@ -5,6 +5,7 @@ from __future__ import annotations
 import math
 import struct
 import wave
+from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
 
@@ -16,6 +17,13 @@ class VoiceError(RuntimeError):
     pass
 
 
+@dataclass(frozen=True)
+class VoiceCue:
+    text: str
+    start: float
+    end: float
+
+
 @lru_cache(maxsize=2)
 def _kokoro_pipeline(language: str):
     from kokoro import KPipeline
@@ -24,7 +32,8 @@ def _kokoro_pipeline(language: str):
 
 
 def generate_voice(text: str, destination: Path, *, backend: str = "kokoro",
-                   language: str = "en-US") -> float:
+                   language: str = "en-US",
+                   cues_out: list[VoiceCue] | None = None) -> float:
     """Write mono PCM WAV, returning its sample-exact duration in seconds."""
     if language not in ("en-US", "zh-CN"):
         raise VoiceError(f"unsupported narration language: {language}")
@@ -57,10 +66,16 @@ def generate_voice(text: str, destination: Path, *, backend: str = "kokoro",
         pipeline = _kokoro_pipeline(language)
         voice = "zf_xiaoyi" if language == "zh-CN" else "af_heart"
         chunks = []
-        for _, _, audio in pipeline(text, voice=voice):
+        cursor = 0
+        for graphemes, _, audio in pipeline(text, voice=voice):
             if hasattr(audio, "detach"):
                 audio = audio.detach().cpu().numpy()
-            chunks.append(np.asarray(audio, dtype=np.float32).reshape(-1))
+            samples_chunk = np.asarray(audio, dtype=np.float32).reshape(-1)
+            chunks.append(samples_chunk)
+            if cues_out is not None and str(graphemes).strip():
+                cues_out.append(VoiceCue(str(graphemes).strip(), cursor / SAMPLE_RATE,
+                                         (cursor + len(samples_chunk)) / SAMPLE_RATE))
+            cursor += len(samples_chunk)
         if not chunks:
             raise VoiceError("Kokoro produced no audio")
         samples = np.concatenate(chunks)

@@ -5,10 +5,10 @@ It turns a **validated, declarative storyboard** into an original, portrait-form
 Manim animation with local voiceover, burned-in English or Simplified Chinese
 subtitles, and an MP4.
 
-> **M1 / experimental:** The storyboard is supplied as JSON. Automatic topic
-> discovery, research/fact-checking by an LLM, unattended retries, visual
-> semantics QA, scheduling, and social publishing are **not implemented yet**.
-> The first milestone is a reproducible end-to-end video render.
+> **M1.3 / experimental:** Two research-linked topics now have manually
+> reviewed bilingual JSON scripts and distinct visuals. Automated *new* topic
+> discovery, LLM research/fact-checking, unattended retries, semantic visual
+> QA, scheduling, and social publishing are **not implemented**.
 
 ## Why another project?
 
@@ -59,6 +59,10 @@ science-factory build examples/moon_orbit.json --voice kokoro --quality preview
 # Chinese preview; uses Mandarin narration and Chinese fonts/subtitles:
 science-factory build examples/moon_orbit.zh-CN.json --voice kokoro --quality preview
 
+# A second independent science topic, using its own five visual primitives:
+science-factory build examples/sound_vacuum.json --voice kokoro --quality preview
+science-factory build examples/sound_vacuum.zh-CN.json --voice kokoro --quality preview
+
 # Only after inspecting the preview:
 science-factory build examples/moon_orbit.json --voice kokoro --quality full
 ```
@@ -76,30 +80,30 @@ science-factory build examples/moon_orbit.json --voice tone --quality preview
 
 ## Render English and Chinese together using GitHub Actions (no local setup)
 
-The repository's **Render science demo** workflow uses GitHub's standard
-Ubuntu runner and downloads the CPU-only PyTorch wheel, Manim, FFmpeg and
-Kokoro. A two-job Actions matrix renders **both languages concurrently**:
+The repository's **Render bilingual science demo** workflow uses GitHub's
+standard Ubuntu runner and downloads the CPU-only PyTorch wheel, Manim,
+FFmpeg and Kokoro. Choose a topic (`moon_orbit`, `sound_vacuum`, or `all`) and
+the workflow builds English (`en-US`) and Mandarin (`zh-CN`) as separate jobs.
+`all` is a four-job science-topic/language acceptance batch. The two versions
+of each topic share the same visual vocabulary but have manually reviewed
+wording and narration. No API keys or paid model services are required.
 
-- `en-US`: `examples/moon_orbit.json`, English narration/subtitles;
-- `zh-CN`: `examples/moon_orbit.zh-CN.json`, Mandarin narration/subtitles.
-
-Both versions are based on the same science topic but use their own validated
-wording and title. M1 does not automatically translate arbitrary new stories.
-No API keys or paid model services are required.
-
-1. Open **Actions → Render science demo → Run workflow** on the `main` branch.
-2. Keep `quality=preview` for the first attempt (360×640). Select `full` only
+1. Open **Actions → Render bilingual science demo → Run workflow** on `main`.
+2. Choose `topic=moon_orbit`, `topic=sound_vacuum`, or `topic=all`.
+   Keep `quality=preview` for the first attempt (360×640). Select `full` only
    after successfully inspecting a preview.
-3. The workflow launches two parallel jobs: **Render en-US** and **Render zh-CN**.
-   When both succeed, download **two artifacts**, `science-moon-en-US-*` and
-   `science-moon-zh-CN-*`, from the **Artifacts** section.
+3. The workflow launches two jobs per topic, up to two at a time.
+   When they succeed, download artifacts called
+   `science-<topic>-<language>-<runid>-<attempt>`.
 4. Each artifact independently contains `final.mp4`, `captions.srt`,
    `manifest.json` and the scene review images. Neither is published.
 
-The workflow also runs on renderer, verified-asset and workflow changes merged
-to `main`, using `preview` for normal pushes. To test a formal 1080×1920 build
-once, add `[full-render]` to the push commit message (or manually select
-`quality=full` in Actions). It is not scheduled
+The workflow also runs when renderer, samples, tests, or workflow files change
+on `main`, using Moon previews for normal pushes. Add `[full-render]` to a push
+commit message to render **both topics and languages** at 1080×1920, or use
+`topic=all, quality=full` manually. `setup-python` reuses pip's dependency
+download cache where permitted, while model weights and Manim intermediates
+are excluded from artifacts. It is not scheduled
 and does not publish to any social account. Artifacts expire after **one day**
 to limit storage usage. Save any sample you want to retain.
 
@@ -119,18 +123,21 @@ python -m unittest discover -s tests -v
 ## Storyboard JSON
 
 See [`examples/moon_orbit.json`](examples/moon_orbit.json) and
-[`examples/moon_orbit.zh-CN.json`](examples/moon_orbit.zh-CN.json).
+[`examples/moon_orbit.zh-CN.json`](examples/moon_orbit.zh-CN.json), plus
+[`examples/sound_vacuum.json`](examples/sound_vacuum.json) and its
+[`Mandarin edition`](examples/sound_vacuum.zh-CN.json).
 A storyboard has:
 
 - `title`, `language`, `target_seconds`;
 - `sources`: HTTPS references for a future fact-checking stage;
 - `scenes`: 3–12 ordered beats, each with `kind`, `title`, `narration`, `params`.
 
-The scene allowlist is `orbit`, `comparison`, `wave`, `force`, `scale`,
-`particles`, `physics_vectors`, and `throw_orbit`. The latter two are trusted
-domain-specific drawings for centripetal force / tangential velocity and a
-schematic slow-throw-versus-orbit comparison. An unknown key, unsupported scene type, multiline/markup text or
-unrecognized parameter is rejected before Manim is started.
+The scene allowlist includes `orbit`, `comparison`, `wave`, `force`, `scale`,
+`particles`, `physics_vectors`, `throw_orbit`, `orbit_intro`, `orbit_recap`,
+`sound_source`, `sound_medium`, `sound_vacuum`, `sound_receiver`, and
+`sound_recap`. These are trusted, predefined diagrams; JSON parameters contain
+only labels. An unknown key, unsupported scene type, multiline/markup text or
+unrecognized parameter is rejected before Manim starts.
 
 These scientific illustrations are **schematic, not physically to scale**.
 An eventual fact-checking step must verify that a template's use does not
@@ -169,6 +176,24 @@ subtitle rules have automated contract tests. A full-resolution bilingual run
 also records real CPU runtime and artifact sizes. Video quality and scientific
 meaning still require human review before publishing.
 
+### M1.3 — pacing, visual variety, sound science, and A/V review
+
+The six Moon beats now open with a closer tracking shot and close with an orbit
+trail, breaking up the repetitive full-orbit diagram. Separate source, medium,
+vacuum and listener drawings support a second science lesson. The sound-wave
+curve is a **pressure-versus-position schematic**, not a depiction of the
+individual molecules tracing transverse paths. The sound facts refer to
+[NASA's explanation of mechanical sound waves](https://science.nasa.gov/ems/02_anatomy/).
+
+Measured Kokoro audio controls each beat's duration; the old mandatory equal
+45-second / six-scene pacing has been removed. Long *leading and trailing*
+silence is cautiously trimmed. Subtitle cards use actual TTS chunk boundaries
+when present, with approximate timing **within** each chunk. This is **not**
+word-level forced alignment. The audio mix uses loudness normalization, and
+the final checker requires AAC, flags extended black frames and excess silence,
+and exports three QA stills per scene (entrance, middle, exit). The final
+editorial/scientific review remains a human responsibility.
+
 ## Files produced by each job
 
 Each run gets its own immutable folder under `output/<timestamp>-<id>/`:
@@ -178,9 +203,9 @@ manifest.json          status, source URLs, SHA-256, metadata QA, review frames
 storyboard.json        normalized, validated input
 render-plan.json       scene timings computed from measured WAV lengths
 voice_00.wav ...       individual narration segments
-captions.srt           phrase-level estimated subtitle timing
+captions.srt           TTS-chunk-anchored phrase timing (not word-aligned)
 manim_media/           intermediate silent renders
-scene_00_review.jpg    one midpoint still per scene
+scene_00_opening_review.jpg / middle / closing (18 stills for six scenes)
 final.mp4              H.264, AAC, burned-in captions
 ```
 
@@ -191,13 +216,13 @@ and authorized independently.
 ## What M1 QA actually checks
 
 Checks include: input schema, source URL shape, supported scene types, measured
-voice duration bounds, final resolution, H.264 format, exactly one audio and one
-video stream, output size, and video duration alignment. Generated JPEGs enable
-visual review.
+voice duration bounds, final resolution, H.264/AAC format, exactly one audio
+and one video stream, output size, duration alignment, FFmpeg black-frame and
+long-silence scans, and 18 sampled JPEGs for human visual review.
 
-**Not yet implemented:** optical overlap detection, scientific factual
-verification, AI visual review, actual speech/caption word alignment, black-frame
-detection, audio peak measurements, and retry/resume state transitions. Thus
+**Not yet implemented:** optical overlap detection, automatic scientific factual
+verification, AI visual review, true word-level subtitle alignment, measured
+true-peak rejection, and retry/resume state transitions. Thus
 `READY` means **technically encoded**, not scientifically or editorially approved.
 
 ## Roadmap
@@ -205,8 +230,11 @@ detection, audio peak measurements, and retry/resume state transitions. Thus
 - **M1** (complete): JSON → local TTS → Manim → FFmpeg → technical QA → bilingual MP4.
 - **M1.1** (complete): NASA-image-based Earth/Moon visuals, atmospheric glow,
   correct moving gravity vector, reusable offline asset package.
-- **M1.2** (implementation): bounded 2.5D camera drift, richer explanatory
+- **M1.2** (complete): bounded 2.5D camera drift, richer explanatory
   templates, improved mobile subtitle positioning and 1080×1920 acceptance run.
+- **M1.3** (implementation): voice-driven pacing, distinct shots, TTS-chunk
+  subtitle cues, silent-edge trim, technical A/V gate, three samples per beat,
+  two topics × two languages, pip caching and batch Actions acceptance.
 - **M2**: scheduled topic intake, cited research, free-model adapter, fact gates,
   storyboard generation, bounded retries, resumable job store, automatic rejection.
 - **M3**: 20-topic unattended acceptance test, visual QA, resource profiling,

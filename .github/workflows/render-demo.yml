@@ -3,6 +3,15 @@ name: Render bilingual science demo
 on:
   workflow_dispatch:
     inputs:
+      topic:
+        description: "Render one topic, or both for a cross-topic QA batch"
+        required: true
+        default: moon_orbit
+        type: choice
+        options:
+          - moon_orbit
+          - sound_vacuum
+          - all
       quality:
         description: "Preview (360x640) or final (1080x1920)"
         required: true
@@ -11,15 +20,17 @@ on:
         options:
           - preview
           - full
-  # Build both languages when the renderer changes. Normal pushes use the
-  # fast preview; a commit subject containing [full-render] performs a single
-  # 1080x1920 QA render on standard CPU runners without a paid service.
+  # Renderer changes get a fast Moon preview; [full-render] checks both
+  # scientific topics in both languages at 1080x1920.
   push:
     branches:
       - main
     paths:
       - .github/workflows/render-demo.yml
-      - science_factory/render_scenes.py
+      - 'science_factory/**'
+      - 'examples/**'
+      - 'tests/**'
+      - pyproject.toml
       - 'science_factory/visuals/**'
       - 'science_factory/assets/**'
 
@@ -32,24 +43,20 @@ concurrency:
 
 jobs:
   render:
-    name: Render ${{ matrix.language }}
+    name: Render ${{ matrix.topic }} ${{ matrix.language }}
     runs-on: ubuntu-24.04
     timeout-minutes: 55
     strategy:
       fail-fast: false
       max-parallel: 2
       matrix:
-        include:
-          - language: en-US
-            storyboard: examples/moon_orbit.json
-          - language: zh-CN
-            storyboard: examples/moon_orbit.zh-CN.json
+        language: [en-US, zh-CN]
+        topic: ${{ fromJSON((github.event_name == 'push' && contains(github.event.head_commit.message, '[full-render]') && '["moon_orbit","sound_vacuum"]') || (github.event_name == 'push' && '["moon_orbit"]') || (inputs.topic == 'all' && '["moon_orbit","sound_vacuum"]') || format('["{0}"]', inputs.topic)) }}
     env:
-      PIP_NO_CACHE_DIR: "1"
       HF_HOME: /tmp/science-hf
       HF_HUB_DISABLE_TELEMETRY: "1"
       OMP_NUM_THREADS: "2"
-      STORYBOARD: ${{ matrix.storyboard }}
+      TOPIC: ${{ matrix.topic }}
       LOCALE: ${{ matrix.language }}
     steps:
       - name: Check out source
@@ -59,6 +66,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+          cache: pip
+          cache-dependency-path: pyproject.toml
 
       - name: Install native graphics, audio and font dependencies
         timeout-minutes: 5
@@ -85,6 +94,8 @@ jobs:
           python -m unittest discover -s tests -v
           python -m science_factory validate examples/moon_orbit.json
           python -m science_factory validate examples/moon_orbit.zh-CN.json
+          python -m science_factory validate examples/sound_vacuum.json
+          python -m science_factory validate examples/sound_vacuum.zh-CN.json
           python - <<'PY'
           from pathlib import Path
           from PIL import Image
@@ -99,6 +110,11 @@ jobs:
         env:
           REQUESTED_QUALITY: ${{ (github.event_name == 'push' && contains(github.event.head_commit.message, '[full-render]') && 'full') || inputs.quality || 'preview' }}
         run: |
+          if [ "$LOCALE" = 'zh-CN' ]; then
+            STORYBOARD="examples/${TOPIC}.zh-CN.json"
+          else
+            STORYBOARD="examples/${TOPIC}.json"
+          fi
           python -m science_factory build "$STORYBOARD" \
             --voice kokoro --quality "$REQUESTED_QUALITY" --output output
 
@@ -113,7 +129,10 @@ jobs:
           assert data['status'] == 'READY', 'only Kokoro-narrated output can pass'
           import os
           assert data['language'] == os.environ['LOCALE'], 'wrong language in render'
-          assert len(data['review_frames']) == 6, 'missing scene review images'
+          assert len(data['review_frames']) == 18, 'missing opening/midpoint/closing scene review images'
+          assert data['checks']['audio_codec'] == 'aac'
+          assert data['checks']['max_black_seconds'] == 0
+          assert data['checks']['max_silence_seconds'] <= 2.6
           print(json.dumps(data['checks'], indent=2))
           PY
 
@@ -121,7 +140,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: science-moon-${{ matrix.language }}-${{ github.run_id }}-${{ github.run_attempt }}
+          name: science-${{ matrix.topic }}-${{ matrix.language }}-${{ github.run_id }}-${{ github.run_attempt }}
           retention-days: 1
           compression-level: 1
           if-no-files-found: warn

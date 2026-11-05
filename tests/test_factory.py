@@ -6,17 +6,22 @@ import struct
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import patch
 
+from science_factory.audio import trim_wav_edges
 from science_factory.cli import main
-from science_factory.media import subtitle_style
-from science_factory.schema import Storyboard, StoryboardError
+from science_factory.media import MediaError, scan_media_quality, subtitle_style
+from science_factory.schema import SCENE_KINDS, Storyboard, StoryboardError
 from science_factory.timeline import captions_srt, make_timeline
-from science_factory.voice import VoiceError, generate_voice, wav_duration
+from science_factory.voice import VoiceCue, VoiceError, generate_voice, wav_duration
 from science_factory.visuals.orbit_math import inward_arrow
 
 
 EXAMPLE = Path(__file__).resolve().parents[1] / "examples" / "moon_orbit.json"
 ZH_EXAMPLE = Path(__file__).resolve().parents[1] / "examples" / "moon_orbit.zh-CN.json"
+SOUND_EXAMPLE = Path(__file__).resolve().parents[1] / "examples" / "sound_vacuum.json"
+SOUND_ZH_EXAMPLE = Path(__file__).resolve().parents[1] / "examples" / "sound_vacuum.zh-CN.json"
 
 
 class StoryboardTests(unittest.TestCase):
@@ -26,9 +31,10 @@ class StoryboardTests(unittest.TestCase):
     def test_valid_example(self):
         storyboard = Storyboard.from_dict(self.data)
         self.assertEqual(len(storyboard.scenes), 6)
-        self.assertEqual(storyboard.scenes[0].kind, "orbit")
+        self.assertEqual(storyboard.scenes[0].kind, "orbit_intro")
         self.assertEqual(storyboard.scenes[2].kind, "physics_vectors")
         self.assertEqual(storyboard.scenes[4].kind, "throw_orbit")
+        self.assertEqual(storyboard.scenes[5].kind, "orbit_recap")
         self.assertEqual(storyboard.to_dict(), self.data)
 
     def test_chinese_storyboard(self):
@@ -39,6 +45,32 @@ class StoryboardTests(unittest.TestCase):
         self.assertEqual([scene.kind for scene in storyboard.scenes],
                          [scene.kind for scene in english.scenes])
         self.assertEqual(storyboard.to_dict(), data)
+
+    def test_second_topic_has_bilingual_visual_and_source_parity(self):
+        english = Storyboard.from_file(SOUND_EXAMPLE)
+        chinese = Storyboard.from_file(SOUND_ZH_EXAMPLE)
+        self.assertEqual(english.language, "en-US")
+        self.assertEqual(chinese.language, "zh-CN")
+        self.assertEqual(len(english.scenes), 6)
+        self.assertEqual([s.kind for s in english.scenes],
+                         [s.kind for s in chinese.scenes])
+        self.assertEqual(english.sources, chinese.sources)
+        self.assertEqual(english.scenes[0].kind, "sound_source")
+        self.assertEqual(english.scenes[-1].kind, "sound_recap")
+        self.assertEqual(len({s.kind for s in english.scenes}), 6)
+
+    def test_templates_all_explicitly_allowlisted(self):
+        for path in (EXAMPLE, ZH_EXAMPLE, SOUND_EXAMPLE, SOUND_ZH_EXAMPLE):
+            storyboard = Storyboard.from_file(path)
+            self.assertTrue(all(scene.kind in SCENE_KINDS for scene in storyboard.scenes))
+            self.assertEqual(main(["validate", str(path)]), 0)
+
+    def test_no_unreviewed_storyboard_code_fields(self):
+        for path in (SOUND_EXAMPLE, SOUND_ZH_EXAMPLE):
+            data = json.loads(path.read_text(encoding="utf-8"))
+            data["scenes"][2]["python"] = "print('not safe')"
+            with self.assertRaises(StoryboardError):
+                Storyboard.from_dict(data)
 
     def test_unknown_template_rejected(self):
         data = copy.deepcopy(self.data)
@@ -80,9 +112,10 @@ class TimelineTests(unittest.TestCase):
         storyboard = Storyboard.from_file(EXAMPLE)
         timeline = make_timeline(storyboard, [6.1, 6.0, 5.5, 6.6, 6.9, 6.0])
         self.assertEqual(timeline[0].start, 0)
-        self.assertAlmostEqual(timeline[1].start, 7.5)
-        # An unusually long voice beat expands the corresponding scene.
-        self.assertAlmostEqual(timeline[-1].start + timeline[-1].duration, 45.05)
+        self.assertAlmostEqual(timeline[1].start, 6.5)
+        # Scenes track voice lengths, and do not pad every beat to 7.5 seconds.
+        self.assertAlmostEqual(timeline[-1].start + timeline[-1].duration, 39.5)
+        self.assertLess(timeline[0].duration, timeline[4].duration)
 
     def test_excessively_long_audio_fails_fast(self):
         storyboard = Storyboard.from_file(EXAMPLE)
@@ -94,7 +127,7 @@ class TimelineTests(unittest.TestCase):
         timeline = make_timeline(storyboard, [6] * 6)
         content = captions_srt(timeline)
         self.assertIn("00:00:00,000 -->", content)
-        self.assertIn("00:00:07,500 -->", content)
+        self.assertIn("00:00:06,400 -->", content)
         self.assertIn("Why doesn't the Moon", content)
 
     def test_subtitle_cards_fit_two_short_lines(self):
@@ -119,6 +152,19 @@ class TimelineTests(unittest.TestCase):
             for line in lines:
                 self.assertLessEqual(len(line), 12)
 
+    def test_subtitles_follow_real_tts_chunk_offsets(self):
+        storyboard = Storyboard.from_file(EXAMPLE)
+        timeline = make_timeline(storyboard, [5.5] * 6)
+        cues = [[VoiceCue("First timed words.", 0.4, 1.4),
+                 VoiceCue("Second timed words.", 2.3, 3.6)]
+                for _ in timeline]
+        content = captions_srt(timeline, cues_by_scene=cues)
+        self.assertIn("00:00:00,400 --> 00:00:01,400", content)
+        self.assertIn("00:00:02,300 --> 00:00:03,600", content)
+        self.assertIn("First timed words.", content)
+        with self.assertRaises(ValueError):
+            captions_srt(timeline, cues_by_scene=cues[:-1])
+
     def test_bilingual_subtitle_styles_reserve_mobile_safe_area(self):
         chinese = subtitle_style("zh-CN")
         english = subtitle_style("en-US")
@@ -135,6 +181,27 @@ class TimelineTests(unittest.TestCase):
 
 
 class VoiceTests(unittest.TestCase):
+    def test_trim_only_long_wav_edge_silences(self):
+        import wave
+        from array import array
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "speech.wav"
+            rate = 24_000
+            samples = array("h", [0] * rate)
+            samples.extend(int(9000 * math.sin(2 * math.pi * 180 * i / rate))
+                           for i in range(rate))
+            samples.extend([0] * rate)
+            with wave.open(str(path), "wb") as writer:
+                writer.setnchannels(1)
+                writer.setsampwidth(2)
+                writer.setframerate(rate)
+                writer.writeframes(samples.tobytes())
+            result = trim_wav_edges(path)
+            self.assertGreater(result.removed_start, 0.7)
+            self.assertGreater(result.removed_end, 0.7)
+            self.assertAlmostEqual(result.duration, 1.32, delta=0.08)
+            self.assertAlmostEqual(wav_duration(path), result.duration)
+
     def test_free_diagnostic_tone_writes_real_wav(self):
         with tempfile.TemporaryDirectory() as directory:
             file = Path(directory) / "tone.wav"
@@ -181,6 +248,24 @@ class VisualAssetTests(unittest.TestCase):
     def test_gravity_arrow_rejects_degenerate_orbit(self):
         with self.assertRaises(ValueError):
             inward_arrow((0, 0, 0), (0, 0, 0))
+
+
+class MediaQualityTests(unittest.TestCase):
+    def test_quality_scan_records_nonblocking_speech_pause(self):
+        report = SimpleNamespace(returncode=0, stderr="silence_duration: 1.45")
+        with patch("science_factory.media.require_tools"), patch(
+                "science_factory.media.subprocess.run", return_value=report):
+            result = scan_media_quality(Path("unopened-example.mp4"))
+        self.assertEqual(result["max_black_seconds"], 0)
+        self.assertEqual(result["max_silence_seconds"], 1.45)
+
+    def test_quality_scan_rejects_long_black_and_silent_sections(self):
+        for description in ("black_duration:0.66", "silence_duration:3.2"):
+            report = SimpleNamespace(returncode=0, stderr=description)
+            with patch("science_factory.media.require_tools"), patch(
+                    "science_factory.media.subprocess.run", return_value=report):
+                with self.assertRaises(MediaError):
+                    scan_media_quality(Path("unopened-example.mp4"))
 
 
 if __name__ == "__main__":

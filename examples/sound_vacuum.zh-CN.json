@@ -1,0 +1,46 @@
+{
+  "title": "太空中为什么听不到声音？",
+  "language": "zh-CN",
+  "target_seconds": 45,
+  "sources": [
+    "https://science.nasa.gov/ems/02_anatomy/"
+  ],
+  "scenes": [
+    {
+      "kind": "sound_source",
+      "title": "太空中真的安静吗？",
+      "narration": "电影里的太空爆炸总是轰隆作响。但如果你真的身处太空，能听见爆炸声吗？",
+      "params": {"note": "声音从振动开始"}
+    },
+    {
+      "kind": "sound_medium",
+      "title": "声音需要传播介质",
+      "narration": "声音是一种机械波。在空气中，相邻粒子来回振动，把能量一个接一个传递出去。",
+      "params": {"note": "粒子来回振动，能量向前传播"}
+    },
+    {
+      "kind": "wave",
+      "title": "空气的疏密变化",
+      "narration": "空气粒子的振动形成交替的压缩和稀疏区域，压力变化把声音传向远方。",
+      "params": {"note": "曲线代表压力变化，不是粒子轨迹"}
+    },
+    {
+      "kind": "sound_vacuum",
+      "title": "真空中几乎没有粒子",
+      "narration": "可在近乎真空的太空中，没有足够的粒子接力，普通声波就无法在其中传播。",
+      "params": {"left": "空气：能传声", "right": "真空：不能传声"}
+    },
+    {
+      "kind": "sound_receiver",
+      "title": "耳朵需要接收到振动",
+      "narration": "我们听见声音，是因为空气等介质把振动一路传到耳朵，让耳朵感受到变化。",
+      "params": {"note": "介质把振动传到耳朵"}
+    },
+    {
+      "kind": "sound_recap",
+      "title": "没有介质，就没有声音",
+      "narration": "所以太空不是没有事件发生，而是普通声音缺少传播介质，无法传到你的耳边。",
+      "params": {"note": "真空不能传播普通声波"}
+    }
+  ]
+}
