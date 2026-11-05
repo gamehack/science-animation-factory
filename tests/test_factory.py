@@ -128,6 +128,8 @@ class TimelineTests(unittest.TestCase):
             self.assertIn("MarginV=48", style)
             self.assertIn("Outline=2", style)
             self.assertIn("Bold=1", style)
+        self.assertIn("FontSize=11", chinese)
+        self.assertIn("FontSize=10", english)
         with self.assertRaises(ValueError):
             subtitle_style("fr-FR")
 
