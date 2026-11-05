@@ -73,10 +73,14 @@ class Storyboard:
     target_seconds: int
     sources: tuple[str, ...]
     scenes: tuple[SceneSpec, ...]
+    schema_version: int = 1
 
     @classmethod
     def from_dict(cls, data: Any) -> Storyboard:
-        obj = _record(data, {"title", "language", "target_seconds", "sources", "scenes"}, "storyboard")
+        obj = _record(data, {"schema_version", "title", "language", "target_seconds", "sources", "scenes"}, "storyboard")
+        schema_version = obj.get("schema_version", 1)
+        if type(schema_version) is not int or schema_version != 1:
+            raise StoryboardError("unsupported storyboard schema_version; supported version is 1")
         title = _text(obj.get("title"), "title", 100)
         language = obj.get("language")
         if language not in ("en-US", "zh-CN"):
@@ -97,7 +101,7 @@ class Storyboard:
         if not isinstance(scene_data, list) or not 3 <= len(scene_data) <= 12:
             raise StoryboardError("scenes must contain 3 to 12 visual beats")
         scenes = tuple(SceneSpec.from_dict(scene, i) for i, scene in enumerate(scene_data))
-        return cls(title=title, language=language, target_seconds=seconds, sources=tuple(urls), scenes=scenes)
+        return cls(title=title, language=language, target_seconds=seconds, sources=tuple(urls), scenes=scenes, schema_version=schema_version)
 
     @classmethod
     def from_file(cls, path: Path) -> Storyboard:
@@ -108,6 +112,7 @@ class Storyboard:
 
     def to_dict(self) -> dict[str, Any]:
         return {
+            "schema_version": self.schema_version,
             "title": self.title,
             "language": self.language,
             "target_seconds": self.target_seconds,

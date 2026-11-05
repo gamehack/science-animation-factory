@@ -128,7 +128,7 @@ See [`examples/moon_orbit.json`](examples/moon_orbit.json) and
 [`Mandarin edition`](examples/sound_vacuum.zh-CN.json).
 A storyboard has:
 
-- `title`, `language`, `target_seconds`;
+- `schema_version` (currently `1`), `title`, `language`, `target_seconds`;
 - `sources`: HTTPS references for a future fact-checking stage;
 - `scenes`: 3–12 ordered beats, each with `kind`, `title`, `narration`, `params`.
 
