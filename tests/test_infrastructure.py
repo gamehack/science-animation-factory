@@ -13,6 +13,14 @@ class JobTests(unittest.TestCase):
   with tempfile.TemporaryDirectory() as d:
    s=JobStore(Path(d)); s.create("a","hash",{})
    with self.assertRaises(ValueError): s.create("b","other",{})
+ def test_output_cache_verifies_recorded_hash(self):
+  with tempfile.TemporaryDirectory() as d:
+   s=JobStore(Path(d)); s.create("a","hash",{})
+   p=Path(d)/"render.bin"; p.write_bytes(b"render")
+   from science_factory.jobs import sha256_file
+   digest=sha256_file(p); s.complete_stage("audio",{"render.bin":digest})
+   self.assertTrue(s.is_complete("audio"))
+   self.assertFalse(s.is_complete("audio",{"render.bin":"wrong"}))
  def test_failure_persisted(self):
   with tempfile.TemporaryDirectory() as d:
    s=JobStore(Path(d)); s.create("a","hash",{})

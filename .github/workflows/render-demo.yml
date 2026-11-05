@@ -148,6 +148,7 @@ jobs:
           path: |
             output/**/final.mp4
             output/**/manifest.json
+            output/**/job-state.json
             output/**/storyboard.json
             output/**/render-plan.json
             output/**/captions.srt

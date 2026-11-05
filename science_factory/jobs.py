@@ -60,7 +60,16 @@ class JobStore:
         state["status"]="failed"; state["error"]=error[:2000]
         state["attempt"]=int(state.get("attempt",1))+1
         self._write(state); return state
-    def is_complete(self,stage:str):
+    def is_complete(self,stage:str,expected_outputs:dict[str,str]|None=None):
         state=self.load()
-        return bool(state and STAGES.index(state.get("stage","created"))>=STAGES.index(stage)
-                    and stage in state.get("completed",{}))
+        if not state or STAGES.index(state.get("stage","created"))<STAGES.index(stage):
+            return False
+        record=state.get("completed",{}).get(stage)
+        if not record: return False
+        outputs=record.get("outputs",{})
+        for name,recorded_hash in outputs.items():
+            expected=(expected_outputs or {}).get(name,recorded_hash)
+            path=self.directory/name
+            if expected!=recorded_hash or not path.is_file() or sha256_file(path)!=recorded_hash:
+                return False
+        return True
