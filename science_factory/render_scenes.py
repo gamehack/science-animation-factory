@@ -83,7 +83,8 @@ def _physics_vectors(params: dict):
     This is a trusted, declarative visual primitive; caller-supplied strings
     only label the two arrows and never become executable drawing code.
     """
-    center = LEFT * 1.1 + UP * 0.25
+    # Keep the diagram above the caption zone used by portrait-video players.
+    center = LEFT * 1.1 + UP * 0.62
     planet = make_earth(radius=0.76).move_to(center)
     satellite = make_moon(radius=0.27).move_to(center + RIGHT * 2.05)
     orbit = Circle(radius=2.05, color=MUTED, stroke_width=2,
@@ -96,8 +97,8 @@ def _physics_vectors(params: dict):
                     buff=0, color=HIGHLIGHT, stroke_width=6, tip_length=0.19)
     inward_label = _label(params.get("left", "Gravity: inward"), size=25, width=3.6)
     sideways_label = _label(params.get("right", "Velocity: tangent"), size=25, width=3.6)
-    inward_label.move_to(LEFT * 1.8 + DOWN * 2.95)
-    sideways_label.move_to(RIGHT * 1.75 + DOWN * 2.95)
+    inward_label.move_to(LEFT * 1.8 + DOWN * 1.85)
+    sideways_label.move_to(RIGHT * 1.75 + DOWN * 1.85)
     drawing = Group(orbit, planet, satellite, gravity, tangent,
                     inward_label, sideways_label)
     return drawing, LaggedStart(GrowArrow(gravity), GrowArrow(tangent), lag_ratio=0.46)
