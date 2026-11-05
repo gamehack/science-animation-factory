@@ -94,7 +94,7 @@ def build(storyboard_file:Path,*,output_root:Path,voice:str="kokoro",quality:str
     jobs.complete_stage("visuals",{str(silent.relative_to(directory)):sha256_file(silent)})
   else:
    if (jobs.load() or {}).get("stage") in ("visuals","composed","technical_qa","ready"):jobs.rewind("visuals")
-   silent=render_manim(plan,directory,quality=quality)
+   silent=renderer.render(plan,directory,quality=quality,language=storyboard.language)
    jobs.complete_stage("visuals",{str(silent.relative_to(directory)):sha256_file(silent)})
   finished=directory/"final.mp4"
   if jobs.is_complete("composed"):
