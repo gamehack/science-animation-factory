@@ -53,8 +53,8 @@ pip install -e '.[all]'
 # No model load, network request or rendering required:
 science-factory validate examples/moon_orbit.json
 
-# Lower-resolution real speech and video:
-science-factory build examples/moon_orbit.json --voice kokoro --quality preview
+# Lower-resolution real speech and video (use the same --job-id to resume a failed job):
+science-factory build examples/moon_orbit.json --voice kokoro --quality preview --job-id moon-demo-01
 
 # Chinese preview; uses Mandarin narration and Chinese fonts/subtitles:
 science-factory build examples/moon_orbit.zh-CN.json --voice kokoro --quality preview
