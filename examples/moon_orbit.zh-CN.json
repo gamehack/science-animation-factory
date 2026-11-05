@@ -17,7 +17,7 @@
       "params": {"direction": "引力向内"}
     },
     {
-      "kind": "comparison",
+      "kind": "physics_vectors",
       "title": "两种运动同时存在",
       "narration": "与此同时，月球还具有沿轨道切线方向的速度。引力和横向运动同时存在。",
       "params": {"left": "引力：向内", "right": "速度：沿切线"}
@@ -29,7 +29,7 @@
       "params": {"center": "地球", "object": "月球"}
     },
     {
-      "kind": "comparison",
+      "kind": "throw_orbit",
       "title": "把球抛得越来越快",
       "narration": "想象把球水平抛得越来越快。如果速度足够大，地面会随着地球曲率不断远离它。",
       "params": {"left": "速度慢：落地", "right": "速度快：沿轨道飞"}

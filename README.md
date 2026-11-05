@@ -29,7 +29,7 @@ as foundational open-source libraries, and FFmpeg as a system tool.
 
 | Field | M1 setting |
 | --- | --- |
-| Genre | 2D explanatory science diagrams, not character cartoons |
+| Genre | 2.5D schematic science animation with photographic celestial sprites |
 | Language | `en-US`, `zh-CN` (separate storyboards, one shared rendering system) |
 | Aspect ratio | 9:16 |
 | Duration | 30–60 seconds |
@@ -96,8 +96,10 @@ No API keys or paid model services are required.
 4. Each artifact independently contains `final.mp4`, `captions.srt`,
    `manifest.json` and the scene review images. Neither is published.
 
-The workflow also runs automatically **when its file lands on main**
-(or when the workflow file is deliberately changed later). It is not scheduled
+The workflow also runs on renderer, verified-asset and workflow changes merged
+to `main`, using `preview` for normal pushes. To test a formal 1080×1920 build
+once, add `[full-render]` to the push commit message (or manually select
+`quality=full` in Actions). It is not scheduled
 and does not publish to any social account. Artifacts expire after **one day**
 to limit storage usage. Save any sample you want to retain.
 
@@ -124,8 +126,10 @@ A storyboard has:
 - `sources`: HTTPS references for a future fact-checking stage;
 - `scenes`: 3–12 ordered beats, each with `kind`, `title`, `narration`, `params`.
 
-The scene allowlist is `orbit`, `comparison`, `wave`, `force`, `scale`, and
-`particles`. An unknown key, unsupported scene type, multiline/markup text or
+The scene allowlist is `orbit`, `comparison`, `wave`, `force`, `scale`,
+`particles`, `physics_vectors`, and `throw_orbit`. The latter two are trusted
+domain-specific drawings for centripetal force / tangential velocity and a
+schematic slow-throw-versus-orbit comparison. An unknown key, unsupported scene type, multiline/markup text or
 unrecognized parameter is rejected before Manim is started.
 
 These scientific illustrations are **schematic, not physically to scale**.
@@ -147,6 +151,23 @@ committed in `science_factory/assets/` and packaged with the application, so
 video jobs do not depend on downloading external images. `assets/SOURCES.md`
 records the primary sources and provenance. A separate one-time preparation
 script can regenerate the discs and verify NASA Git blob hashes.
+
+### M1.2 — camera language, physical explanations and mobile-safe subtitles
+
+The Moon demo now renders the two explanatory beats using actual arrows and
+trajectories, rather than generic rectangular comparison cards. The gravity
+beat uses the same NASA-image-based Earth/Moon pair as the orbital scenes.
+
+Each segment animates a gently drifting `MovingCameraScene` camera while its
+own science motion continues; the camera returns to its original position
+between segments. This bounded motion stays compatible with Cairo CPU
+rendering, the existing 30–60-second speech timeline and the same JSON schema.
+
+FFmpeg burns subtitles with a larger bilingual font, stronger contrast and
+extra bottom margin for short-form mobile playback. The new templates and
+subtitle rules have automated contract tests. A full-resolution bilingual run
+also records real CPU runtime and artifact sizes. Video quality and scientific
+meaning still require human review before publishing.
 
 ## Files produced by each job
 
@@ -182,12 +203,14 @@ detection, audio peak measurements, and retry/resume state transitions. Thus
 ## Roadmap
 
 - **M1** (complete): JSON → local TTS → Manim → FFmpeg → technical QA → bilingual MP4.
-- **M1.1** (current): NASA-image-based Earth/Moon visuals, atmospheric glow,
+- **M1.1** (complete): NASA-image-based Earth/Moon visuals, atmospheric glow,
   correct moving gravity vector, reusable offline asset package.
+- **M1.2** (implementation): bounded 2.5D camera drift, richer explanatory
+  templates, improved mobile subtitle positioning and 1080×1920 acceptance run.
 - **M2**: scheduled topic intake, cited research, free-model adapter, fact gates,
   storyboard generation, bounded retries, resumable job store, automatic rejection.
 - **M3**: 20-topic unattended acceptance test, visual QA, resource profiling,
-  1080×1920 quality iteration, and creator review queue.
+  production-grade quality iteration and creator review queue.
 
 ## Open-source and licensing
 

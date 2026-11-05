@@ -8,6 +8,7 @@ import unittest
 from pathlib import Path
 
 from science_factory.cli import main
+from science_factory.media import subtitle_style
 from science_factory.schema import Storyboard, StoryboardError
 from science_factory.timeline import captions_srt, make_timeline
 from science_factory.voice import VoiceError, generate_voice, wav_duration
@@ -26,12 +27,17 @@ class StoryboardTests(unittest.TestCase):
         storyboard = Storyboard.from_dict(self.data)
         self.assertEqual(len(storyboard.scenes), 6)
         self.assertEqual(storyboard.scenes[0].kind, "orbit")
+        self.assertEqual(storyboard.scenes[2].kind, "physics_vectors")
+        self.assertEqual(storyboard.scenes[4].kind, "throw_orbit")
         self.assertEqual(storyboard.to_dict(), self.data)
 
     def test_chinese_storyboard(self):
         data = json.loads(ZH_EXAMPLE.read_text(encoding="utf-8"))
         storyboard = Storyboard.from_dict(data)
         self.assertEqual(storyboard.language, "zh-CN")
+        english = Storyboard.from_dict(self.data)
+        self.assertEqual([scene.kind for scene in storyboard.scenes],
+                         [scene.kind for scene in english.scenes])
         self.assertEqual(storyboard.to_dict(), data)
 
     def test_unknown_template_rejected(self):
@@ -112,6 +118,18 @@ class TimelineTests(unittest.TestCase):
             self.assertLessEqual(len(lines), 2)
             for line in lines:
                 self.assertLessEqual(len(line), 12)
+
+    def test_bilingual_subtitle_styles_reserve_mobile_safe_area(self):
+        chinese = subtitle_style("zh-CN")
+        english = subtitle_style("en-US")
+        self.assertIn("Noto Sans CJK SC", chinese)
+        self.assertIn("DejaVu Sans", english)
+        for style in (chinese, english):
+            self.assertIn("MarginV=48", style)
+            self.assertIn("Outline=2", style)
+            self.assertIn("Bold=1", style)
+        with self.assertRaises(ValueError):
+            subtitle_style("fr-FR")
 
 
 class VoiceTests(unittest.TestCase):

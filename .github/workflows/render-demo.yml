@@ -11,8 +11,9 @@ on:
         options:
           - preview
           - full
-  # Build both languages whenever the workflow itself changes.
-  # Subsequent runs are manual, except for deliberate workflow edits.
+  # Build both languages when the renderer changes. Normal pushes use the
+  # fast preview; a commit subject containing [full-render] performs a single
+  # 1080x1920 QA render on standard CPU runners without a paid service.
   push:
     branches:
       - main
@@ -94,9 +95,9 @@ jobs:
           PY
 
       - name: Render sample video with real local narration
-        timeout-minutes: 20
+        timeout-minutes: 35
         env:
-          REQUESTED_QUALITY: ${{ inputs.quality || 'preview' }}
+          REQUESTED_QUALITY: ${{ (github.event_name == 'push' && contains(github.event.head_commit.message, '[full-render]') && 'full') || inputs.quality || 'preview' }}
         run: |
           python -m science_factory build "$STORYBOARD" \
             --voice kokoro --quality "$REQUESTED_QUALITY" --output output

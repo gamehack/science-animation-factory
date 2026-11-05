@@ -9,7 +9,8 @@ from typing import Any
 from urllib.parse import urlparse
 
 
-SCENE_KINDS = frozenset({"orbit", "comparison", "wave", "force", "scale", "particles"})
+SCENE_KINDS = frozenset({"orbit", "comparison", "wave", "force", "scale", "particles",
+                         "physics_vectors", "throw_orbit"})
 ALLOWED_PARAM_KEYS = frozenset({"left", "right", "center", "object", "direction", "note"})
 
 

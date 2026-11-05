@@ -52,6 +52,22 @@ def render_manim(render_plan: Path, directory: Path, *, quality: str) -> Path:
     return candidates[0]
 
 
+def subtitle_style(language: str) -> str:
+    """Keep bilingual captions readable and above short-form app UI overlays.
+
+    libass scales style coordinates with the video frame, so the same normalized
+    phone-safe layout works at both 360x640 and 1080x1920.
+    """
+    if language not in ("en-US", "zh-CN"):
+        raise ValueError(f"unsupported subtitle language: {language}")
+    font = "Noto Sans CJK SC" if language == "zh-CN" else "DejaVu Sans"
+    size = "15" if language == "zh-CN" else "14"
+    return (f"FontName={font},FontSize={size},Bold=1,"
+            "PrimaryColour=&H00FFFFFF,OutlineColour=&H00101827,"
+            "Outline=2,Shadow=0.7,Alignment=2,"
+            "MarginV=48,MarginL=26,MarginR=26")
+
+
 def mux_video(silent_mp4: Path, wav_files: list[Path],
               timeline: list[TimedScene], srt_path: Path, destination: Path) -> None:
     """One-pass audio mix, then burn captions without a paid video service."""
@@ -70,10 +86,8 @@ def mux_video(silent_mp4: Path, wav_files: list[Path],
     filters.append(f"{''.join(labels)}amix=inputs={len(labels)}:duration=longest:normalize=0[mixed]")
     filters.append("[mixed]apad[aout]")
     total_seconds = timeline[-1].start + timeline[-1].duration
-    # ASS style units are scaled by libass's script resolution, not by output
-    # pixels. MarginV=150 placed captions over the science drawings in 360x640.
-    font = "Noto Sans CJK SC" if timeline[0].language == "zh-CN" else "DejaVu Sans"
-    style = f"FontName={font},FontSize=12,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,Outline=1.5,Alignment=2,MarginV=14"
+    # Reserve the bottom UI band used by Facebook Reels and similar apps.
+    style = subtitle_style(timeline[0].language)
     caption_filter = f"subtitles={srt_path.name}:force_style='{style}'"
     cmd.extend(["-filter_complex", ";".join(filters), "-map", "0:v:0", "-map", "[aout]",
                 "-vf", caption_filter, "-c:v", "libx264", "-pix_fmt", "yuv420p",

@@ -19,7 +19,7 @@
       "params": {"direction": "Gravitational pull"}
     },
     {
-      "kind": "comparison",
+      "kind": "physics_vectors",
       "title": "Two motions at once",
       "narration": "The Moon is also moving sideways. That motion is essential to understanding its orbit.",
       "params": {"left": "Gravity: inward", "right": "Motion: sideways"}
@@ -31,7 +31,7 @@
       "params": {"center": "Earth", "object": "Moon"}
     },
     {
-      "kind": "comparison",
+      "kind": "throw_orbit",
       "title": "Imagine throwing a ball",
       "narration": "Imagine throwing a ball faster and faster. At high enough speed, the ground curves away beneath it.",
       "params": {"left": "Slow: lands", "right": "Fast: keeps falling"}
