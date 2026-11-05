@@ -61,7 +61,9 @@ def subtitle_style(language: str) -> str:
     if language not in ("en-US", "zh-CN"):
         raise ValueError(f"unsupported subtitle language: {language}")
     font = "Noto Sans CJK SC" if language == "zh-CN" else "DejaVu Sans"
-    size = "15" if language == "zh-CN" else "14"
+    # libass scales SRT font sizes using video height; larger values caused
+    # automatic 3-line wraps at 9:16, covering the visual's own annotations.
+    size = "11" if language == "zh-CN" else "10"
     return (f"FontName={font},FontSize={size},Bold=1,"
             "PrimaryColour=&H00FFFFFF,OutlineColour=&H00101827,"
             "Outline=2,Shadow=0.7,Alignment=2,"
