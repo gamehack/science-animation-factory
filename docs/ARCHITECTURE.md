@@ -38,7 +38,7 @@ external data fetches require SSRF-safe URL and redirect validation.
 Full visual/video QA needs a machine with Manim, Kokoro and FFmpeg installed.
 The CPU/RAM/runtime of the target machine must be measured before scheduling.
 
-## M2 decisions still open
+## Infrastructure additions (M1.4 foundation)\n\n- JobStore persists monotonic stage state with atomic file replacement.\n- Every completed stage can record output hashes; cache helpers use SHA-256.\n- TTSProvider and Renderer protocols define explicit extension points.\n- QualityReport distinguishes technical pass from visual, semantic and factual\n  approval. Unknown checks cannot silently pass.\n- Build manifests record Python, Manim, Kokoro, NumPy and FFmpeg versions.\n\nThe current pipeline records stage completion but does not yet resume a partially\nrendered Manim scene graph after process loss. Stage-level resume/cache integration\nis a subsequent M1.5 deliverable.\n\n## M2 decisions still open
 
 1. A scientific source allowlist and evidence/claim schema.
 2. LLM adapter with free-only model routing, request quotas and no paid fallback.

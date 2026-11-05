@@ -200,7 +200,8 @@ editorial/scientific review remains a human responsibility.
 Each run gets its own immutable folder under `output/<timestamp>-<id>/`:
 
 ```text
-manifest.json          status, source URLs, SHA-256, metadata QA, review frames
+manifest.json          technical QA, provenance, hashes, versions and review frames
+job-state.json          atomic stage state and attempt/error metadata
 storyboard.json        normalized, validated input
 render-plan.json       scene timings computed from measured WAV lengths
 voice_00.wav ...       individual narration segments
@@ -248,5 +249,5 @@ depends on its build and components; check requirements before redistributing
 its binaries. Source facts and any future third-party assets need independent
 commercial-use checks. No external stock footage is used in M1.
 
-This is an independent experimental project, not a production service.
+See [Infrastructure Contract](docs/INFRASTRUCTURE.md) and [M1 Architecture](docs/ARCHITECTURE.md).\n\nThis remains an experimental project; automatic scientific/editorial approval and\nfull failed-render resume are not yet production-ready.
 

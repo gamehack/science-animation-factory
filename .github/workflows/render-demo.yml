@@ -38,8 +38,8 @@ permissions:
   contents: read
 
 concurrency:
-  group: render-science-demo
-  cancel-in-progress: true
+  group: render-science-demo-${{ github.run_id }}-${{ github.run_attempt }}
+  cancel-in-progress: false
 
 jobs:
   render:
@@ -126,13 +126,14 @@ jobs:
           manifests = list(Path('output').glob('*/manifest.json'))
           assert len(manifests) == 1, 'expected one completed job'
           data = json.loads(manifests[0].read_text(encoding='utf-8'))
-          assert data['status'] == 'READY', 'only Kokoro-narrated output can pass'
+          assert data['status'] == 'TECHNICALLY_READY', 'technical QA must pass; editorial review remains separate'
           import os
           assert data['language'] == os.environ['LOCALE'], 'wrong language in render'
           assert len(data['review_frames']) == 18, 'missing opening/midpoint/closing scene review images'
           assert data['checks']['audio_codec'] == 'aac'
           assert data['checks']['max_black_seconds'] == 0
           assert data['checks']['max_silence_seconds'] <= 2.6
+          assert data['quality_report']['status'] == 'CONTENT_REVIEW_REQUIRED'
           print(json.dumps(data['checks'], indent=2))
           PY
 
@@ -147,6 +148,7 @@ jobs:
           path: |
             output/**/final.mp4
             output/**/manifest.json
+            output/**/job-state.json
             output/**/storyboard.json
             output/**/render-plan.json
             output/**/captions.srt
