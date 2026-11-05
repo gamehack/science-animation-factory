@@ -1,0 +1,48 @@
+name: Prepare NASA celestial assets
+
+on:
+  workflow_dispatch:
+  # One-time import when this workflow is first committed; it is not scheduled.
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/prepare-celestial-assets.yml
+
+permissions:
+  contents: read
+
+jobs:
+  prepare:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install lightweight image conversion libraries
+        run: python -m pip install pillow numpy
+      - name: Download and verify official NASA source maps, then project discs
+        run: python scripts/prepare_celestial_assets.py --output generated_assets --size 512
+      - name: Verify images are reusable RGBA discs
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from PIL import Image
+          for body in ('earth', 'moon'):
+              path = Path(f'generated_assets/{body}_disc.png')
+              assert path.exists()
+              with Image.open(path) as image:
+                  assert image.mode == 'RGBA' and image.size == (512, 512)
+                  assert image.getpixel((0, 0))[3] == 0
+                  assert image.getpixel((256, 256))[3] == 255
+          assert Path('generated_assets/provenance.json').is_file()
+          PY
+      - name: Upload transparent discs, preview and source hashes
+        uses: actions/upload-artifact@v4
+        with:
+          name: nasa-celestial-asset-import-${{ github.run_id }}
+          path: generated_assets/*
+          retention-days: 1
+          compression-level: 1
