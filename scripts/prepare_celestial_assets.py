@@ -14,7 +14,7 @@ from pathlib import Path
 from urllib.request import Request, urlopen
 
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageOps
 
 
 NASA_ASSETS = {
@@ -51,8 +51,18 @@ def orthographic_disc(texture: Image.Image, *, longitude_deg: float,
     """Project equirectangular satellite imagery onto a lit transparent disc."""
     texture = texture.convert("RGB")
     width, height = texture.size
+    if 0.85 <= width / height <= 1.15:
+        # Some NASA assets are already photographic face-on discs, not global
+        # longitude/latitude maps. Keep their scientifically grounded details.
+        photo = ImageOps.fit(texture, (size, size), method=Image.Resampling.LANCZOS)
+        coords = (np.arange(size, dtype=np.float64) + 0.5) / size * 2 - 1
+        x, y = np.meshgrid(coords, coords)
+        edge = 1.5 / size * 2
+        alpha = np.clip((1 - np.sqrt(x * x + y * y)) / edge, 0, 1)
+        rgba = np.dstack((np.asarray(photo), np.round(alpha * 255).astype(np.uint8)))
+        return Image.fromarray(rgba, mode="RGBA")
     if not 1.75 <= width / height <= 2.25:
-        raise ValueError(f"expected 2:1 equirectangular map; got {width}x{height}")
+        raise ValueError(f"expected square disc or 2:1 equirectangular map; got {width}x{height}")
     pixels = np.asarray(texture, dtype=np.float32)
     coords = (np.arange(size, dtype=np.float64) + 0.5) / size * 2 - 1
     x, y = np.meshgrid(coords, coords)
@@ -94,6 +104,8 @@ def build(output: Path, *, size: int = 512) -> None:
         # The binary format is restricted to JPEG, and Pillow decodes it locally.
         from io import BytesIO
         texture = Image.open(BytesIO(data))
+        thumb = ImageOps.contain(texture.convert("RGB"), (640, 640))
+        thumb.save(output / f"source_{name}_thumb.jpg", quality=88)
         disc = orthographic_disc(texture, longitude_deg=source["center_longitude"], size=size)
         path = output / f"{name}_disc.png"
         disc.save(path, optimize=True)

@@ -8,6 +8,7 @@ on:
       - main
     paths:
       - .github/workflows/prepare-celestial-assets.yml
+      - scripts/prepare_celestial_assets.py
 
 permissions:
   contents: read
