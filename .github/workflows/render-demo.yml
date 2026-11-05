@@ -31,6 +31,7 @@ on:
       - 'examples/**'
       - 'tests/**'
       - pyproject.toml
+      - README.md
       - 'science_factory/visuals/**'
       - 'science_factory/assets/**'
 
