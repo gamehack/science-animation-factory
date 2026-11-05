@@ -20,7 +20,8 @@ class JobTests(unittest.TestCase):
    from science_factory.jobs import sha256_file
    digest=sha256_file(p); s.complete_stage("audio",{"render.bin":digest})
    self.assertTrue(s.is_complete("audio"))
-   self.assertFalse(s.is_complete("audio",{"render.bin":"wrong"}))
+   p.write_bytes(b"tampered")
+   self.assertFalse(s.is_complete("audio"))
  def test_resume_preserves_verified_checkpoint(self):
   with tempfile.TemporaryDirectory() as d:
    s=JobStore(Path(d)); s.create("a","hash",{"voice":"kokoro"})
