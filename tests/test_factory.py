@@ -13,7 +13,7 @@ from science_factory.audio import trim_wav_edges
 from science_factory.cli import main
 from science_factory.media import MediaError, scan_media_quality, subtitle_style
 from science_factory.schema import SCENE_KINDS, Storyboard, StoryboardError
-from science_factory.timeline import captions_srt, make_timeline
+from science_factory.timeline import _subtitle_phrases, captions_srt, make_timeline
 from science_factory.voice import VoiceCue, VoiceError, generate_voice, wav_duration
 from science_factory.visuals.orbit_math import inward_arrow
 
@@ -145,12 +145,22 @@ class TimelineTests(unittest.TestCase):
         self.assertEqual(timeline[0].language, "zh-CN")
         self.assertEqual(timeline[0].to_dict()["language"], "zh-CN")
         content = captions_srt(timeline)
-        self.assertIn("月球为什么没有直接掉到地球上", content.replace("\n", ""))
+        spoken = "".join("".join(block.splitlines()[2:]) for block in
+                         content.strip().split("\n\n"))
+        self.assertIn("月球为什么没有直接掉到地球上", spoken)
         for block in content.strip().split("\n\n"):
             lines = block.splitlines()[2:]
             self.assertLessEqual(len(lines), 2)
             for line in lines:
                 self.assertLessEqual(len(line), 12)
+
+    def test_chinese_punctuation_never_becomes_orphan_subtitle(self):
+        for count in range(13, 55):
+            text = "粒" * count + "。"
+            phrases, _, _ = _subtitle_phrases(text, "zh-CN")
+            self.assertEqual("".join(phrases), text)
+            self.assertTrue(all(2 <= len(phrase) <= 12 for phrase in phrases),
+                            (count, phrases))
 
     def test_subtitles_follow_real_tts_chunk_offsets(self):
         storyboard = Storyboard.from_file(EXAMPLE)

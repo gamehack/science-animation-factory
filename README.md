@@ -189,7 +189,8 @@ Measured Kokoro audio controls each beat's duration; the old mandatory equal
 45-second / six-scene pacing has been removed. Long *leading and trailing*
 silence is cautiously trimmed. Subtitle cards use actual TTS chunk boundaries
 when present, with approximate timing **within** each chunk. This is **not**
-word-level forced alignment. The audio mix uses loudness normalization, and
+word-level forced alignment. Chinese captions are balanced into short
+single-line cards so punctuation is not stranded on its own line. The audio mix uses loudness normalization, and
 the final checker requires AAC, flags extended black frames and excess silence,
 and exports three QA stills per scene (entrance, middle, exit). The final
 editorial/scientific review remains a human responsibility.

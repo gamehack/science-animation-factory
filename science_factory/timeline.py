@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import textwrap
 import re
+import math
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -69,8 +70,13 @@ def _subtitle_phrases(text: str, language: str) -> tuple[list[str], list[int], i
     """Split a narrator-produced grapheme span into phone-friendly cards."""
     if language == "zh-CN":
         clauses = re.findall(r"[^，。！？；]+[，。！？；]?", text)
-        phrases = [clause[i:i + 24] for clause in clauses
-                   for i in range(0, len(clause), 24)]
+        phrases = []
+        for clause in clauses:
+            # Roughly equal one-line cards never leave a lonely punctuation
+            # mark or single character stranded on a third subtitle line.
+            pieces = max(1, math.ceil(len(clause) / 12))
+            width = math.ceil(len(clause) / pieces)
+            phrases.extend(clause[i:i + width] for i in range(0, len(clause), width))
         return phrases, [len(phrase) for phrase in phrases], 12
     phrases: list[str] = []
     current: list[str] = []
