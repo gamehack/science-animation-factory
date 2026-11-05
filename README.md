@@ -101,15 +101,21 @@ wording and narration. No API keys or paid model services are required.
 The workflow also runs when renderer, samples, tests, or workflow files change
 on `main`, using Moon previews for normal pushes. Add `[full-render]` to a push
 commit message to render **both topics and languages** at 1080×1920, or use
-`topic=all, quality=full` manually. `setup-python` reuses pip's dependency
-download cache where permitted, while model weights and Manim intermediates
-are excluded from artifacts. It is not scheduled
-and does not publish to any social account. Artifacts expire after **one day**
-to limit storage usage. Save any sample you want to retain.
+`topic=all, quality=full` manually.
 
-GitHub currently provides free standard hosted-runner compute on public
-repositories, but artifact storage has separate plan limits. No large model
-weights or intermediate render caches are uploaded as artifacts.
+Dependency wheels are cached by `setup-python`; Kokoro model weights use a
+separate, versioned GitHub Actions cache and are not placed in video artifacts.
+For a **rerun of the same workflow run**, each topic/language has a stable Job ID.
+The workflow downloads the previous attempt's one-day checkpoint artifact,
+verifies SHA-256 outputs, and resumes from the last valid audio/visual/composition
+stage. A newly dispatched workflow is a new job and does not reuse another
+run's artifacts. Checkpoint artifacts include WAV segments, TTS cue data, the
+silent Manim render, final MP4, manifest and review stills. They expire after
+**one day**; copy any deliverable you want to retain.
+
+The workflow is not scheduled and does not publish to any social account.
+GitHub-hosted runner compute is free for this public repository; cache and
+artifact storage remain separately subject to GitHub plan limits.
 
 ### Run the core tests
 
