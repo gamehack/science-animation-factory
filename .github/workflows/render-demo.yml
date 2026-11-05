@@ -168,4 +168,7 @@ jobs:
             output/**/storyboard.json
             output/**/render-plan.json
             output/**/captions.srt
+            output/**/voice_*.wav
+            output/**/voice-cues.json
+            output/**/manim_media/**/*.mp4
             output/**/scene_*_review.jpg
