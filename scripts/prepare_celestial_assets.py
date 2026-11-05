@@ -53,7 +53,17 @@ def orthographic_disc(texture: Image.Image, *, longitude_deg: float,
     width, height = texture.size
     if 0.85 <= width / height <= 1.15:
         # Some NASA assets are already photographic face-on discs, not global
-        # longitude/latitude maps. Keep their scientifically grounded details.
+        # longitude/latitude maps. Their square JPEG may have a wide black
+        # backdrop around the globe, which we crop before applying the mask.
+        colors = np.asarray(texture, dtype=np.uint8)
+        visible = np.max(colors, axis=2) > 24
+        if 0.08 < visible.mean() < 0.90:
+            ys, xs = np.where(visible)
+            center_x = (xs.min() + xs.max()) / 2
+            center_y = (ys.min() + ys.max()) / 2
+            diameter = max(xs.max() - xs.min(), ys.max() - ys.min()) * 1.025
+            texture = texture.crop((center_x - diameter / 2, center_y - diameter / 2,
+                                    center_x + diameter / 2, center_y + diameter / 2))
         photo = ImageOps.fit(texture, (size, size), method=Image.Resampling.LANCZOS)
         coords = (np.arange(size, dtype=np.float64) + 0.5) / size * 2 - 1
         x, y = np.meshgrid(coords, coords)
