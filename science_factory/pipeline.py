@@ -43,6 +43,7 @@ def build(storyboard_file: Path, *, output_root: Path, voice: str = "kokoro",
         "run_id": run_id,
         "status": "RUNNING",
         "voice_backend": voice,
+        "language": storyboard.language,
         "quality": quality,
         "storyboard_sha256": hashlib.sha256(source_bytes).hexdigest(),
         "source_urls": list(storyboard.sources),
@@ -56,7 +57,8 @@ def build(storyboard_file: Path, *, output_root: Path, voice: str = "kokoro",
         audio_durations: list[float] = []
         for index, scene in enumerate(storyboard.scenes):
             file = directory / f"voice_{index:02}.wav"
-            duration = generate_voice(scene.narration, file, backend=voice)
+            duration = generate_voice(scene.narration, file, backend=voice,
+                                      language=storyboard.language)
             wavs.append(file)
             audio_durations.append(duration)
         timeline = make_timeline(storyboard, audio_durations)

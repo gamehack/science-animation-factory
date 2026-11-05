@@ -1,4 +1,4 @@
-name: Render science demo
+name: Render bilingual science demo
 
 on:
   workflow_dispatch:
@@ -11,7 +11,7 @@ on:
         options:
           - preview
           - full
-  # Run a single real render when this workflow first lands on main.
+  # Build both languages whenever the workflow itself changes.
   # Subsequent runs are manual, except for deliberate workflow edits.
   push:
     branches:
@@ -28,13 +28,25 @@ concurrency:
 
 jobs:
   render:
+    name: Render ${{ matrix.language }}
     runs-on: ubuntu-24.04
     timeout-minutes: 55
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        include:
+          - language: en-US
+            storyboard: examples/moon_orbit.json
+          - language: zh-CN
+            storyboard: examples/moon_orbit.zh-CN.json
     env:
       PIP_NO_CACHE_DIR: "1"
       HF_HOME: /tmp/science-hf
       HF_HUB_DISABLE_TELEMETRY: "1"
       OMP_NUM_THREADS: "2"
+      STORYBOARD: ${{ matrix.storyboard }}
+      LOCALE: ${{ matrix.language }}
     steps:
       - name: Check out source
         uses: actions/checkout@v4
@@ -54,7 +66,7 @@ jobs:
             -o Acquire::Retries=2 -o Acquire::http::Timeout=30 \
             -o Acquire::https::Timeout=30 \
             build-essential pkg-config libcairo2-dev libpango1.0-dev \
-            ffmpeg espeak-ng fonts-dejavu-core
+            ffmpeg espeak-ng fonts-dejavu-core fonts-noto-cjk
 
       - name: Install CPU-only PyTorch and science factory
         timeout-minutes: 25
@@ -68,13 +80,14 @@ jobs:
         run: |
           python -m unittest discover -s tests -v
           python -m science_factory validate examples/moon_orbit.json
+          python -m science_factory validate examples/moon_orbit.zh-CN.json
 
       - name: Render sample video with real local narration
         timeout-minutes: 20
         env:
           REQUESTED_QUALITY: ${{ inputs.quality || 'preview' }}
         run: |
-          python -m science_factory build examples/moon_orbit.json \
+          python -m science_factory build "$STORYBOARD" \
             --voice kokoro --quality "$REQUESTED_QUALITY" --output output
 
       - name: Confirm deliverable is ready and print video metadata
@@ -86,6 +99,8 @@ jobs:
           assert len(manifests) == 1, 'expected one completed job'
           data = json.loads(manifests[0].read_text(encoding='utf-8'))
           assert data['status'] == 'READY', 'only Kokoro-narrated output can pass'
+          import os
+          assert data['language'] == os.environ['LOCALE'], 'wrong language in render'
           assert len(data['review_frames']) == 6, 'missing scene review images'
           print(json.dumps(data['checks'], indent=2))
           PY
@@ -94,7 +109,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: science-moon-demo-${{ github.run_id }}-${{ github.run_attempt }}
+          name: science-moon-${{ matrix.language }}-${{ github.run_id }}-${{ github.run_attempt }}
           retention-days: 1
           compression-level: 1
           if-no-files-found: warn

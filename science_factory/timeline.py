@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import textwrap
+import re
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -19,6 +20,7 @@ class TimedScene:
     title: str
     narration: str
     params: dict[str, str]
+    language: str = "en-US"
 
     def to_dict(self) -> dict:
         return {
@@ -30,6 +32,7 @@ class TimedScene:
             "title": self.title,
             "narration": self.narration,
             "params": self.params,
+            "language": self.language,
         }
 
 
@@ -44,7 +47,8 @@ def make_timeline(storyboard: Storyboard, durations: list[float]) -> list[TimedS
             raise ValueError(f"scene {index}: TTS duration outside supported bounds")
         length = round(max(minimum, audio_duration + 0.65), 3)
         timeline.append(TimedScene(index, round(cursor, 3), length, audio_duration,
-                                   scene.kind, scene.title, scene.narration, scene.params))
+                                   scene.kind, scene.title, scene.narration, scene.params,
+                                   storyboard.language))
         cursor += length
     if not 29.5 <= cursor <= 60.5:
         raise ValueError(f"total voice-driven duration {cursor:.1f}s outside 30–60s short format")
@@ -60,34 +64,44 @@ def _srt_time(seconds: float) -> str:
 
 
 def captions_srt(timeline: list[TimedScene]) -> str:
-    """Word-count-timed phrases inside each measured narration window.
+    """Phrase-timed subtitles inside each measured narration window.
 
-    These are phrase-level approximations, NOT forced word alignment.
+    These are phrase-level approximations, NOT forced speech alignment.
     """
     entries: list[str] = []
     count = 0
     for scene in timeline:
-        phrases: list[str] = []
-        words = scene.narration.split()
-        current: list[str] = []
-        for word in words:
-            # Restrict each card to roughly two short lines on a 9:16 phone.
-            # Longer phrases collide with the center-stage visual vocabulary.
-            if current and (len(" ".join(current + [word])) > 38 or len(current) >= 7):
+        if scene.language == "zh-CN":
+            # Chinese has no reliable whitespace word boundaries. Respect short
+            # clauses, then split long clauses into <=24-character subtitle cards.
+            clauses = re.findall(r"[^，。！？；]+[，。！？；]?", scene.narration)
+            phrases = [clause[i:i + 24] for clause in clauses
+                       for i in range(0, len(clause), 24)]
+            weights = [len(phrase) for phrase in phrases]
+            wrap_width = 12
+        else:
+            phrases = []
+            words = scene.narration.split()
+            current: list[str] = []
+            for word in words:
+                # Restrict each card to roughly two short lines on a 9:16 phone.
+                if current and (len(" ".join(current + [word])) > 38 or len(current) >= 7):
+                    phrases.append(" ".join(current))
+                    current = []
+                current.append(word)
+            if current:
                 phrases.append(" ".join(current))
-                current = []
-            current.append(word)
-        if current:
-            phrases.append(" ".join(current))
-        weights = [len(phrase.split()) for phrase in phrases]
-        total_words = sum(weights)
-        elapsed_words = 0
+            weights = [len(phrase.split()) for phrase in phrases]
+            wrap_width = 24
+        total_weight = sum(weights)
+        elapsed_weight = 0
         for phrase, weight in zip(phrases, weights):
-            start = scene.start + scene.audio_duration * elapsed_words / total_words
-            elapsed_words += weight
-            end = scene.start + scene.audio_duration * elapsed_words / total_words
+            start = scene.start + scene.audio_duration * elapsed_weight / total_weight
+            elapsed_weight += weight
+            end = scene.start + scene.audio_duration * elapsed_weight / total_weight
             count += 1
-            wrapped = "\n".join(textwrap.wrap(phrase, width=24, break_long_words=False))
+            wrapped = "\n".join(textwrap.wrap(phrase, width=wrap_width,
+                       break_long_words=scene.language == "zh-CN", break_on_hyphens=False))
             entries.append(f"{count}\n{_srt_time(start)} --> {_srt_time(end)}\n{wrapped}\n")
     return "\n".join(entries) + "\n"
 

@@ -2,7 +2,8 @@
 
 An independent, MIT-licensed, **no-paid-API** science animation pipeline.
 It turns a **validated, declarative storyboard** into an original, portrait-format
-Manim animation with local voiceover, burned-in English subtitles, and an MP4.
+Manim animation with local voiceover, burned-in English or Simplified Chinese
+subtitles, and an MP4.
 
 > **M1 / experimental:** The storyboard is supplied as JSON. Automatic topic
 > discovery, research/fact-checking by an LLM, unattended retries, visual
@@ -29,13 +30,13 @@ as foundational open-source libraries, and FFmpeg as a system tool.
 | Field | M1 setting |
 | --- | --- |
 | Genre | 2D explanatory science diagrams, not character cartoons |
-| Language | `en-US` |
+| Language | `en-US`, `zh-CN` (separate storyboards, one shared rendering system) |
 | Aspect ratio | 9:16 |
 | Duration | 30–60 seconds |
 | Resolution | `preview`: 360×640; `full`: 1080×1920 |
 | Frame rate | 30 FPS |
 | Format | H.264/AAC MP4 |
-| Narration | Local Kokoro, `af_heart` |
+| Narration | Local Kokoro, `af_heart` (English) and `zf_xiaoyi` (Mandarin) |
 | Cost | No paid AI, TTS, video or image API |
 
 These outputs still consume local CPU, memory, disk and electricity. Kokoro's
@@ -44,7 +45,7 @@ model weights may be downloaded on first use; no paid service is required.
 ## Quick start (Ubuntu / Debian)
 
 ```bash
-sudo apt-get install ffmpeg libcairo2-dev libpango1.0-dev pkg-config espeak-ng
+sudo apt-get install ffmpeg libcairo2-dev libpango1.0-dev pkg-config espeak-ng fonts-dejavu-core fonts-noto-cjk
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -e '.[all]'
@@ -54,6 +55,9 @@ science-factory validate examples/moon_orbit.json
 
 # Lower-resolution real speech and video:
 science-factory build examples/moon_orbit.json --voice kokoro --quality preview
+
+# Chinese preview; uses Mandarin narration and Chinese fonts/subtitles:
+science-factory build examples/moon_orbit.zh-CN.json --voice kokoro --quality preview
 
 # Only after inspecting the preview:
 science-factory build examples/moon_orbit.json --voice kokoro --quality full
@@ -70,21 +74,29 @@ Tone jobs are marked `PREVIEW_ONLY` and **must not be published**.
 science-factory build examples/moon_orbit.json --voice tone --quality preview
 ```
 
-## Render a sample using GitHub Actions (no local setup)
+## Render English and Chinese together using GitHub Actions (no local setup)
 
 The repository's **Render science demo** workflow uses GitHub's standard
 Ubuntu runner and downloads the CPU-only PyTorch wheel, Manim, FFmpeg and
-Kokoro. It generates a narrated sample with the committed Moon-orbit storyboard.
+Kokoro. A two-job Actions matrix renders **both languages concurrently**:
+
+- `en-US`: `examples/moon_orbit.json`, English narration/subtitles;
+- `zh-CN`: `examples/moon_orbit.zh-CN.json`, Mandarin narration/subtitles.
+
+Both versions are based on the same science topic but use their own validated
+wording and title. M1 does not automatically translate arbitrary new stories.
 No API keys or paid model services are required.
 
 1. Open **Actions → Render science demo → Run workflow** on the `main` branch.
 2. Keep `quality=preview` for the first attempt (360×640). Select `full` only
    after successfully inspecting a preview.
-3. When the job succeeds, open the workflow run and download the artifact
-   named `science-moon-demo-*` from the **Artifacts** section.
-4. Check `final.mp4`, `captions.srt`, `manifest.json` and the scene review images.
+3. The workflow launches two parallel jobs: **Render en-US** and **Render zh-CN**.
+   When both succeed, download **two artifacts**, `science-moon-en-US-*` and
+   `science-moon-zh-CN-*`, from the **Artifacts** section.
+4. Each artifact independently contains `final.mp4`, `captions.srt`,
+   `manifest.json` and the scene review images. Neither is published.
 
-The workflow also runs automatically **once when its file first lands on main**
+The workflow also runs automatically **when its file lands on main**
 (or when the workflow file is deliberately changed later). It is not scheduled
 and does not publish to any social account. Artifacts expire after **one day**
 to limit storage usage. Save any sample you want to retain.
@@ -104,7 +116,9 @@ python -m unittest discover -s tests -v
 
 ## Storyboard JSON
 
-See [`examples/moon_orbit.json`](examples/moon_orbit.json). A storyboard has:
+See [`examples/moon_orbit.json`](examples/moon_orbit.json) and
+[`examples/moon_orbit.zh-CN.json`](examples/moon_orbit.zh-CN.json).
+A storyboard has:
 
 - `title`, `language`, `target_seconds`;
 - `sources`: HTTPS references for a future fact-checking stage;

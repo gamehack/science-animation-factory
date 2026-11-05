@@ -13,8 +13,8 @@ dependencies = []
 
 [project.optional-dependencies]
 render = ["manim>=0.20,<0.23"]
-voice = ["kokoro>=0.9", "numpy>=1.26"]
-all = ["manim>=0.20,<0.23", "kokoro>=0.9", "numpy>=1.26"]
+voice = ["kokoro>=0.9", "numpy>=1.26", "misaki[zh]>=0.9"]
+all = ["manim>=0.20,<0.23", "kokoro>=0.9", "numpy>=1.26", "misaki[zh]>=0.9"]
 
 [project.scripts]
 science-factory = "science_factory.cli:main"

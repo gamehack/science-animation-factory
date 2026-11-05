@@ -76,8 +76,8 @@ class Storyboard:
         obj = _record(data, {"title", "language", "target_seconds", "sources", "scenes"}, "storyboard")
         title = _text(obj.get("title"), "title", 100)
         language = obj.get("language")
-        if language != "en-US":
-            raise StoryboardError("M1 only supports en-US; no implicit translation")
+        if language not in ("en-US", "zh-CN"):
+            raise StoryboardError("supported languages are en-US and zh-CN; no implicit translation")
         seconds = obj.get("target_seconds")
         if type(seconds) is not int or not 30 <= seconds <= 60:
             raise StoryboardError("target_seconds must be an integer between 30 and 60")

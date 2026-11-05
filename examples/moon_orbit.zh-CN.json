@@ -1,0 +1,44 @@
+{
+  "title": "月球为什么不会掉到地球上？",
+  "language": "zh-CN",
+  "target_seconds": 45,
+  "sources": ["https://science.nasa.gov/moon/facts/"],
+  "scenes": [
+    {
+      "kind": "orbit",
+      "title": "月球为什么不掉下来？",
+      "narration": "月球为什么没有直接掉到地球上？其实，月球一直在下落，只是它下落的方式与你想的不一样。",
+      "params": {"center": "地球", "object": "月球"}
+    },
+    {
+      "kind": "force",
+      "title": "引力不断向内拉",
+      "narration": "地球的引力不断把月球拉向地球，就像地面上的球会受到重力一样。",
+      "params": {"direction": "引力向内"}
+    },
+    {
+      "kind": "comparison",
+      "title": "两种运动同时存在",
+      "narration": "与此同时，月球还具有沿轨道切线方向的速度。引力和横向运动同时存在。",
+      "params": {"left": "引力：向内", "right": "速度：沿切线"}
+    },
+    {
+      "kind": "orbit",
+      "title": "轨迹持续弯曲",
+      "narration": "地球引力持续改变月球的运动方向，让它沿着弯曲的轨道前进。",
+      "params": {"center": "地球", "object": "月球"}
+    },
+    {
+      "kind": "comparison",
+      "title": "把球抛得越来越快",
+      "narration": "想象把球水平抛得越来越快。如果速度足够大，地面会随着地球曲率不断远离它。",
+      "params": {"left": "速度慢：落地", "right": "速度快：沿轨道飞"}
+    },
+    {
+      "kind": "orbit",
+      "title": "这就是轨道运动",
+      "narration": "月球的轨道运动可以理解为围绕地球的持续自由落体，而不是直接撞向地球。",
+      "params": {"center": "地球", "object": "月球"}
+    }
+  ]
+}

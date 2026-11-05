@@ -26,7 +26,9 @@ MUTED = "#98A8BB"
 
 
 def _label(value: str, *, size: int = 28, width: float = 3.1):
-    result = Text(value, font_size=size, color=TEXT)
+    is_cjk = any("\u3400" <= character <= "\u9fff" for character in value)
+    font = "Noto Sans CJK SC" if is_cjk else "DejaVu Sans"
+    result = Text(value, font=font, font_size=size, color=TEXT)
     return result.scale_to_fit_width(min(width, result.width)) if result.width > width else result
 
 

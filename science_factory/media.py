@@ -72,7 +72,8 @@ def mux_video(silent_mp4: Path, wav_files: list[Path],
     total_seconds = timeline[-1].start + timeline[-1].duration
     # ASS style units are scaled by libass's script resolution, not by output
     # pixels. MarginV=150 placed captions over the science drawings in 360x640.
-    style = "FontName=DejaVu Sans,FontSize=12,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,Outline=1.5,Alignment=2,MarginV=14"
+    font = "Noto Sans CJK SC" if timeline[0].language == "zh-CN" else "DejaVu Sans"
+    style = f"FontName={font},FontSize=12,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,Outline=1.5,Alignment=2,MarginV=14"
     caption_filter = f"subtitles={srt_path.name}:force_style='{style}'"
     cmd.extend(["-filter_complex", ";".join(filters), "-map", "0:v:0", "-map", "[aout]",
                 "-vf", caption_filter, "-c:v", "libx264", "-pix_fmt", "yuv420p",

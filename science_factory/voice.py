@@ -16,19 +16,22 @@ class VoiceError(RuntimeError):
     pass
 
 
-@lru_cache(maxsize=1)
-def _kokoro_pipeline():
+@lru_cache(maxsize=2)
+def _kokoro_pipeline(language: str):
     from kokoro import KPipeline
 
-    return KPipeline(lang_code="a")
+    return KPipeline(lang_code={"en-US": "a", "zh-CN": "z"}[language])
 
 
-def generate_voice(text: str, destination: Path, *, backend: str = "kokoro") -> float:
+def generate_voice(text: str, destination: Path, *, backend: str = "kokoro",
+                   language: str = "en-US") -> float:
     """Write mono PCM WAV, returning its sample-exact duration in seconds."""
+    if language not in ("en-US", "zh-CN"):
+        raise VoiceError(f"unsupported narration language: {language}")
     destination.parent.mkdir(parents=True, exist_ok=True)
     if backend == "tone":
         # A non-speech diagnostic sound. Never publish outputs using this backend.
-        duration = max(2.5, len(text.split()) / 2.45)
+        duration = max(2.5, len(text) / 4.0 if language == "zh-CN" else len(text.split()) / 2.45)
         frames = round(duration * SAMPLE_RATE)
         with wave.open(str(destination), "wb") as writer:
             writer.setnchannels(1)
@@ -51,9 +54,10 @@ def generate_voice(text: str, destination: Path, *, backend: str = "kokoro") -> 
 
     # M1 runs on CPU as well as on GPU; never invokes a metered TTS endpoint.
     try:
-        pipeline = _kokoro_pipeline()
+        pipeline = _kokoro_pipeline(language)
+        voice = "zf_xiaoyi" if language == "zh-CN" else "af_heart"
         chunks = []
-        for _, _, audio in pipeline(text, voice="af_heart"):
+        for _, _, audio in pipeline(text, voice=voice):
             if hasattr(audio, "detach"):
                 audio = audio.detach().cpu().numpy()
             chunks.append(np.asarray(audio, dtype=np.float32).reshape(-1))
