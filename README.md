@@ -190,7 +190,7 @@ Measured Kokoro audio controls each beat's duration; the old mandatory equal
 silence is cautiously trimmed. Subtitle cards use actual TTS chunk boundaries
 when present, with approximate timing **within** each chunk. This is **not**
 word-level forced alignment. Chinese captions are balanced into short
-single-line cards so punctuation is not stranded on its own line. The audio mix uses loudness normalization, and
+single-line cards so punctuation is not stranded on its own line. The audio mix uses loudness normalization; final encoded audio is measured with\nFFmpeg ebur128 and must meet an integrated loudness target of -16 LUFS ±2 LU\nand a true-peak ceiling of -1 dBFS. The pipeline also
 the final checker requires AAC, flags extended black frames and excess silence,
 and exports three QA stills per scene (entrance, middle, exit). The final
 editorial/scientific review remains a human responsibility.

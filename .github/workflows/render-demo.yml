@@ -133,6 +133,8 @@ jobs:
           assert data['checks']['audio_codec'] == 'aac'
           assert data['checks']['max_black_seconds'] == 0
           assert data['checks']['max_silence_seconds'] <= 2.6
+          assert data['checks']['true_peak_dbfs'] <= -1.0
+          assert -18.0 <= data['checks']['integrated_loudness_lufs'] <= -14.0
           assert data['quality_report']['status'] == 'CONTENT_REVIEW_REQUIRED'
           print(json.dumps(data['checks'], indent=2))
           PY

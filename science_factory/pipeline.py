@@ -5,11 +5,12 @@ from datetime import datetime,timezone
 from pathlib import Path
 from .audio import trim_wav_edges
 from .jobs import JobStore,sha256_file
-from .media import extract_scene_stills,inspect_mp4,mux_video,render_manim,require_tools,scan_media_quality
+from .media import extract_scene_stills,inspect_mp4,mux_video,require_tools,scan_media_quality
 from .quality import QualityReport
+from .providers import default_registry
 from .schema import Storyboard
 from .timeline import make_timeline,save_captions
-from .voice import VoiceCue,generate_voice,wav_duration
+from .voice import VoiceCue,wav_duration
 
 class BuildError(RuntimeError): pass
 def _write_json(path:Path,data:dict)->None:
@@ -30,6 +31,7 @@ def build(storyboard_file:Path,*,output_root:Path,voice:str="kokoro",quality:str
  require_tools("ffmpeg","ffprobe")
  try:import manim
  except ImportError as exc:raise BuildError('Manim is missing; install with: pip install -e ".[render]"') from exc
+ registry=default_registry();tts=registry.tts(voice);renderer=registry.renderer("manim-cairo")
  run_id=job_id or (datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S")+"-"+uuid.uuid4().hex[:8])
  if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,79}",run_id):raise BuildError("job_id must be 1-80 safe filename characters")
  directory=output_root.resolve()/run_id
@@ -37,7 +39,8 @@ def build(storyboard_file:Path,*,output_root:Path,voice:str="kokoro",quality:str
  source_bytes=storyboard_file.read_bytes(); input_hash=hashlib.sha256(source_bytes).hexdigest()
  config={"voice":voice,"quality":quality,"language":storyboard.language,
   "python":platform.python_version(),"manim":getattr(manim,"__version__","unknown"),
-  "kokoro":_version("kokoro"),"numpy":_version("numpy"),"ffmpeg":_tool_version("ffmpeg")}
+  "kokoro":_version("kokoro"),"numpy":_version("numpy"),"ffmpeg":_tool_version("ffmpeg"),
+  "tts_provider":tts.name,"tts_provider_version":tts.version,"renderer":renderer.name,"renderer_version":renderer.version}
  jobs=JobStore(directory); existing=jobs.load()
  jobs.create(run_id,input_hash,config)
  if existing and existing.get("status")!="ready":jobs.resume()
@@ -67,7 +70,7 @@ def build(storyboard_file:Path,*,output_root:Path,voice:str="kokoro",quality:str
    if (jobs.load() or {}).get("stage") in ("audio","visuals","composed","technical_qa","ready"):jobs.rewind("audio")
    for index,scene in enumerate(storyboard.scenes):
     file=directory/f"voice_{index:02}.wav";cues=[]
-    raw_duration=generate_voice(scene.narration,file,backend=voice,language=storyboard.language,cues_out=cues)
+    raw_duration=tts.synthesize(scene.narration,file,language=storyboard.language,cues_out=cues)
     trim_result=trim_wav_edges(file);duration=trim_result.duration
     aligned=[VoiceCue(cue.text,max(0.0,cue.start-trim_result.removed_start),
       min(duration,cue.end-trim_result.removed_start)) for cue in cues
@@ -87,7 +90,7 @@ def build(storyboard_file:Path,*,output_root:Path,voice:str="kokoro",quality:str
    saved=jobs.output_paths("visuals");relative=next(iter(saved),None)
    silent=directory/relative if relative else None
    if silent is None or not silent.is_file():
-    jobs.rewind("visuals");silent=render_manim(plan,directory,quality=quality)
+    jobs.rewind("visuals");silent=renderer.render(plan,directory,quality=quality,language=storyboard.language)
     jobs.complete_stage("visuals",{str(silent.relative_to(directory)):sha256_file(silent)})
   else:
    if (jobs.load() or {}).get("stage") in ("visuals","composed","technical_qa","ready"):jobs.rewind("visuals")
