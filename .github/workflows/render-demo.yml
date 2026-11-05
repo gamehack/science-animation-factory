@@ -36,6 +36,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: render-science-demo-${{ github.run_id }}-${{ github.run_attempt }}
@@ -111,6 +112,14 @@ jobs:
                   assert body.mode == 'RGBA' and body.size == (512, 512)
           PY
 
+      - name: Restore checkpoint from a previous attempt
+        if: ${{ github.run_attempt > 1 }}
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
+        with:
+          pattern: science-${{ matrix.topic }}-${{ matrix.language }}-${{ github.run_id }}-*
+          path: output
+          merge-multiple: true
+
       - name: Render sample video with real local narration
         timeout-minutes: 35
         env:
@@ -121,8 +130,7 @@ jobs:
           else
             STORYBOARD="examples/${TOPIC}.json"
           fi
-          python -m science_factory build "$STORYBOARD" \
-            --voice kokoro --quality "$REQUESTED_QUALITY" --output output
+          python -m science_factory build "$STORYBOARD" --voice kokoro --quality "$REQUESTED_QUALITY" --output output --job-id "gha-${GITHUB_RUN_ID}-${TOPIC}-${LOCALE}"
 
       - name: Confirm deliverable is ready and print video metadata
         run: |
