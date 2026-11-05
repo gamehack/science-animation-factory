@@ -58,12 +58,17 @@ def orthographic_disc(texture: Image.Image, *, longitude_deg: float,
         colors = np.asarray(texture, dtype=np.uint8)
         visible = np.max(colors, axis=2) > 24
         if 0.08 < visible.mean() < 0.90:
-            ys, xs = np.where(visible)
-            center_x = (xs.min() + xs.max()) / 2
-            center_y = (ys.min() + ys.max()) / 2
-            diameter = max(xs.max() - xs.min(), ys.max() - ys.min()) * 1.025
-            texture = texture.crop((center_x - diameter / 2, center_y - diameter / 2,
-                                    center_x + diameter / 2, center_y + diameter / 2))
+            # Ignore sparse JPEG compression noise outside the visible globe.
+            # Counting every nonblack pixel makes a single stray corner pixel
+            # wrongly force the crop to cover the entire original photograph.
+            rows = np.flatnonzero(visible.mean(axis=1) > 0.065)
+            cols = np.flatnonzero(visible.mean(axis=0) > 0.065)
+            if len(rows) and len(cols):
+                center_x = (cols[0] + cols[-1]) / 2
+                center_y = (rows[0] + rows[-1]) / 2
+                diameter = max(cols[-1] - cols[0], rows[-1] - rows[0]) * 1.03
+                texture = texture.crop((center_x - diameter / 2, center_y - diameter / 2,
+                                        center_x + diameter / 2, center_y + diameter / 2))
         photo = ImageOps.fit(texture, (size, size), method=Image.Resampling.LANCZOS)
         coords = (np.arange(size, dtype=np.float64) + 0.5) / size * 2 - 1
         x, y = np.meshgrid(coords, coords)
