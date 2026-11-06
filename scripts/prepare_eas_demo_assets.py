@@ -57,7 +57,6 @@ def main() -> None:
     ROOT.mkdir(parents=True, exist_ok=True)
     im, d = frame(1)
     camera(d)
-    d.text((85, 1280), "THE CAMERA", fill=INK, font=title_font(92))
     im.save(ROOT / "kodak_01.jpg", quality=85)
 
     im, d = frame(2)
@@ -67,7 +66,6 @@ def main() -> None:
             d.rectangle((x,y,x+155,y+169),fill=(67,53,43),outline=GOLD,width=5)
             d.rectangle((x+19,y+17,x+137,y+147),fill=(183,139,84))
             d.ellipse((x+38,y+38,x+119,y+122),outline=(95,68,51),width=8)
-    d.text((105, 1370), "100 EXPOSURES", fill=INK, font=title_font(66))
     im.save(ROOT / "kodak_02.jpg", quality=85)
 
     im, d = frame(3)
@@ -77,7 +75,6 @@ def main() -> None:
     d.line([(130,615),(294,820),(777,710)],fill=(225,195,144),width=18)
     d.rectangle((385,827,673,985),fill=(246,220,171),outline=RED,width=6)
     d.text((422,864), "U.S.", fill=INK, font=title_font(66))
-    d.text((112,1340), "MAIL IT BACK", fill=INK, font=title_font(76))
     im.save(ROOT / "kodak_03.jpg", quality=85)
 
     im, d = frame(4)
@@ -87,7 +84,6 @@ def main() -> None:
         d.ellipse((x+65,y+55,x+210,y+210),fill=(128,108,87))
         d.ellipse((x+80,y+56,x+196,y+172),fill=(213,185,143))
         d.polygon([(x+70,y+280),(x+151,y+188),(x+240,y+285)],fill=(126,104,86))
-    d.text((120,1370), "THE PRINTS",fill=INK,font=title_font(84))
     im.save(ROOT / "kodak_04.jpg", quality=85)
     print("Generated four independent engineering placeholders. Editorial approval required.")
 
