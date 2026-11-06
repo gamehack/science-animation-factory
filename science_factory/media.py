@@ -87,8 +87,10 @@ def mux_video(silent_mp4: Path, wav_files: list[Path],
         filters.append(f"[{index + 1}:a]adelay={round(scene.start * 1000)}:all=1[{label}]")
         labels.append(f"[{label}]")
     filters.append(f"{''.join(labels)}amix=inputs={len(labels)}:duration=longest:normalize=0[mixed]")
-    # Normalize speech across languages; constrain true peak for mobile players.
-    filters.append("[mixed]loudnorm=I=-16:TP=-1.5:LRA=11,apad[aout]")
+    # AAC encoding can overshoot one-pass loudnorm on brief transients.
+    # Add headroom and disable limiter auto make-up gain to preserve the ceiling.
+    filters.append("[mixed]loudnorm=I=-16:TP=-3:LRA=11,"
+                   "alimiter=limit=0.65:attack=5:release=50:level=0,apad[aout]")
     total_seconds = timeline[-1].start + timeline[-1].duration
     # Reserve the bottom UI band used by Facebook Reels and similar apps.
     style = subtitle_style(timeline[0].language)
