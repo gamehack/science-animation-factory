@@ -70,6 +70,11 @@ class EditorialSchemaTests(unittest.TestCase):
             f = _camera_filter(motion, 150, 360, 640)
             self.assertIn("zoompan", f)
             self.assertIn("360x640", f)
+        # EAS camera should not swing across a 14% overscan.
+        self.assertIn("0.035", _camera_filter("push_in", 150, 360, 640))
+        self.assertNotIn("0.13", _camera_filter("push_in", 150, 360, 640))
+        self.assertIn("zoompan=z='1':x='0'", _camera_filter("still", 150, 360, 640))
+        self.assertIn("0.14", _camera_filter("pan_left", 150, 360, 640))
 
     def test_storyboard_serialization(self):
         with tempfile.TemporaryDirectory() as temp:
