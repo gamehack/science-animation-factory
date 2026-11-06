@@ -257,3 +257,17 @@ commercial-use checks. No external stock footage is used in M1.
 
 See [Infrastructure Contract](docs/INFRASTRUCTURE.md) and [M1 Architecture](docs/ARCHITECTURE.md).\n\nThis remains an experimental project; automatic scientific/editorial approval and\nfull failed-render resume are not yet production-ready.
 
+
+## Experimental editorial shorts (EAS)
+
+This repository also has an **isolated**, opt-in Editorial Storyboard v2 path for
+narrated 15–45-second portrait micro-documentaries. It uses separately provided,
+rights-reviewed images, FFmpeg virtual-camera motion and xfade, Kokoro speech,
+voice-paced captions, optional licensed background music with narration ducking,
+and the existing checkpoint/QA infrastructure. It does not change the original
+science Storyboard v1/Manim workflows.
+
+See [Editorial renderer usage and limitations](EDITORIAL_README.md).
+The Kodak example currently uses **engineering-only placeholder illustrations**;
+no visual, semantic, or factual editorial approval is implied, and no social
+publishing API is called.

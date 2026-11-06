@@ -14,7 +14,8 @@ dependencies = []
 [project.optional-dependencies]
 render = ["manim>=0.20,<0.23"]
 voice = ["kokoro>=0.9", "numpy>=1.26", "misaki[zh]>=0.9"]
-all = ["manim>=0.20,<0.23", "kokoro>=0.9", "numpy>=1.26", "misaki[zh]>=0.9"]
+editorial = ["Pillow>=10,<13"]
+all = ["manim>=0.20,<0.23", "kokoro>=0.9", "numpy>=1.26", "misaki[zh]>=0.9", "Pillow>=10,<13"]
 
 [project.scripts]
 science-factory = "science_factory.cli:main"
@@ -24,4 +25,3 @@ include = ["science_factory*"]
 
 [tool.setuptools.package-data]
 science_factory = ["assets/*.png", "assets/*.json"]
-
