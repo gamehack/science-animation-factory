@@ -41,3 +41,10 @@ these with four or more original distinct scene illustrations before publishing.
   Storage, runner quotas, and externally generated illustration costs must still be monitored.
 - Existing science demo workflow and dependencies are unchanged.
 - Asset files and soundtrack license metadata belong to the EAS editorial team.
+
+### Camera motion policy (EAS)
+
+- Prefer `still` or one gentle, centered `push_in` (maximum 3.5% zoom); do not alternate left/right pans between adjacent scenes.
+- `pan_left` / `pan_right` remain opt-in and now move less than 0.5% of the full picture width per scene.
+- Pilot fixes should update both the renderer and the example storyboard; older saved job IDs should not be reused after renderer changes.
+- This only addresses unwanted camera sway. A final EAS video still requires independent scene illustrations, editorial review, and appropriate music.
