@@ -1,6 +1,12 @@
 name: Render editorial video preview
 
 on:
+  pull_request:
+    paths:
+      - .github/workflows/render-editorial.yml
+      - 'science_factory/editorial_*.py'
+      - examples/eas_kodak_1888.json
+      - scripts/prepare_eas_demo_assets.py
   workflow_dispatch:
     inputs:
       quality:
@@ -60,7 +66,7 @@ jobs:
           science-factory build-editorial examples/eas_kodak_1888.json \
             --assets-dir examples/assets/eas \
             --voice kokoro \
-            --quality '${{ inputs.quality }}' \
+            --quality '${{ inputs.quality || 'preview' }}' \
             --job-id 'editorial-${{ github.run_id }}-${{ inputs.quality }}'
           python - <<'PY'
           import json
@@ -79,7 +85,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
-          name: eas-kodak-${{ inputs.quality }}-${{ github.run_id }}
+          name: eas-kodak-${{ inputs.quality || 'preview' }}-${{ github.run_id }}
           retention-days: 1
           if-no-files-found: warn
           compression-level: 1
