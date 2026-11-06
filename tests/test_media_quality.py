@@ -39,7 +39,11 @@ class MuxTruePeakTests(unittest.TestCase):
         from types import SimpleNamespace
         from unittest.mock import patch
         from science_factory.media import MediaError, measure_audio_quality
-        log = "Integrated loudness:\\n    I: -16.0 LUFS\\nTrue peak:\\n    Peak: -0.3 dBFS\\n"
+        log = """Integrated loudness:
+    I: -16.0 LUFS
+True peak:
+    Peak: -0.3 dBFS
+"""
         with patch("science_factory.media.require_tools"), patch(
             "science_factory.media.subprocess.run",
             return_value=SimpleNamespace(returncode=0, stderr=log)
