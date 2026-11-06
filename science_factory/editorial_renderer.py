@@ -29,24 +29,29 @@ def _run(command: list[str], *, cwd: Path | None = None, timeout: int = 2400) ->
 
 
 def _camera_filter(motion: str, frames: int, width: int, height: int) -> str:
-    """Zoom/pan overscanned original image, without creating intermediate PNGs."""
+    """Stable documentary camera: tiny, single-direction movement without oscillation.
+
+    Horizontal pans are opt-in and travel at most ~0.5% of frame width.
+    All default camera paths stay centered; a 3.5% slow zoom avoids the
+    distracting 13-14% back-and-forth movement in the first EAS pilot.
+    """
     steps = max(1, frames - 1)
-    progress = f"on/{steps}"
+    progress = f"min(1,on/{steps})"
     if motion == "push_in":
-        zoom = f"1+0.13*{progress}"
+        zoom = f"1+0.035*{progress}"
         x = "(iw-iw/zoom)/2"
     elif motion == "pull_out":
-        zoom = f"1.13-0.13*{progress}"
+        zoom = f"1.035-0.035*{progress}"
         x = "(iw-iw/zoom)/2"
     elif motion == "pan_left":
-        zoom = "1.14"
-        x = f"(iw-iw/zoom)*(1-{progress})"
+        zoom = "1.035"
+        x = f"(iw-iw/zoom)*(0.57-0.14*{progress})"
     elif motion == "pan_right":
-        zoom = "1.14"
-        x = f"(iw-iw/zoom)*{progress}"
+        zoom = "1.035"
+        x = f"(iw-iw/zoom)*(0.43+0.14*{progress})"
     elif motion == "still":
-        zoom = "1.06"
-        x = "(iw-iw/zoom)/2"
+        zoom = "1"
+        x = "0"
     else:
         raise EditorialRenderError(f"invalid motion: {motion}")
     y = "(ih-ih/zoom)/2"

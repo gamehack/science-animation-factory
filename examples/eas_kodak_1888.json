@@ -7,8 +7,8 @@
   "sources": ["https://americanhistory.si.edu/collections/object/nmah_760118"],
   "scenes": [
     {"title":"The camera you mailed back","narration":"In 1888, Kodak sold a camera you could actually mail back when you finished shooting.","image":"kodak_01.jpg","motion":"push_in","rights":"original","credit":"EAS original AI editorial illustration, temporary crop for engineering QA"},
-    {"title":"One hundred exposures","narration":"For twenty five dollars, it came preloaded with enough film for one hundred pictures.","image":"kodak_02.jpg","motion":"pan_right","rights":"original","credit":"EAS original AI editorial illustration, temporary crop for engineering QA"},
-    {"title":"Send the whole camera","narration":"When the roll was finished, customers sent the entire camera to the factory.","image":"kodak_03.jpg","motion":"pan_left","rights":"original","credit":"EAS original AI editorial illustration, temporary crop for engineering QA"},
-    {"title":"Kodak did the rest","narration":"Kodak developed the photographs, reloaded the camera, and mailed it back. Would you do that today?","image":"kodak_04.jpg","motion":"pull_out","rights":"original","credit":"EAS original AI editorial illustration, temporary crop for engineering QA"}
+    {"title":"One hundred exposures","narration":"For twenty five dollars, it came preloaded with enough film for one hundred pictures.","image":"kodak_02.jpg","motion":"still","rights":"original","credit":"EAS original AI editorial illustration, temporary crop for engineering QA"},
+    {"title":"Send the whole camera","narration":"When the roll was finished, customers sent the entire camera to the factory.","image":"kodak_03.jpg","motion":"push_in","rights":"original","credit":"EAS original AI editorial illustration, temporary crop for engineering QA"},
+    {"title":"Kodak did the rest","narration":"Kodak developed the photographs, reloaded the camera, and mailed it back. Would you do that today?","image":"kodak_04.jpg","motion":"still","rights":"original","credit":"EAS original AI editorial illustration, temporary crop for engineering QA"}
   ]
 }
